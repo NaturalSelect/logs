@@ -1,4 +1,6 @@
-## Example
+# Logs
+
+## Enable and disable zone
 
 ```log
 # ./build/bin/cfs-cli zone info default
