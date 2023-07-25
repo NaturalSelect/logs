@@ -194,9 +194,6 @@ MetaStatusCode MetaStoreImpl::CreateDentry(const CreateDentryRequest *request,
 bool MetaStoreImpl::Save(const std::string &dir,
                          OnSnapshotSaveDoneClosure *done) {
     brpc::ClosureGuard doneGuard(done);
-    // WriteLockGuard writeLockGuard(rwLock_);
-    ReadLockGuard readLockGuard(rwLock_);
-
     MetaStoreFStream fstream(&partitionMap_, kvStorage_,
                              copysetNode_->GetPoolId(),
                              copysetNode_->GetCopysetId());
@@ -209,13 +206,9 @@ bool MetaStoreImpl::Save(const std::string &dir,
     }
 
     // checkpoint storage
-    CondVariable cv;
     ....
     std::vector<std::string> files;
-    succ = kvStorage_->Checkpoint(dir,&files,[&cv](){
-        cv.Signal();
-    });
-    cv.Wait();
+    succ = kvStorage_->Checkpoint(dir,&files);
     if (!succ) {
         done->SetError(MetaStatusCode::SAVE_META_FAIL);
         return false;
@@ -236,7 +229,7 @@ bool MetaStoreImpl::Save(const std::string &dir,
 
 ```cpp
 bool RocksDBStorage::Checkpoint(const std::string& dir,
-                                std::vector<std::string>* files,FlushCallback cb) {
+                                std::vector<std::string>* files) {
     rocksdb::FlushOptions options;
     options.wait = false;
     options.allow_write_stall = true;
@@ -246,6 +239,7 @@ bool RocksDBStorage::Checkpoint(const std::string& dir,
         LOG(ERROR) << "Failed to flush DB, " << status.ToString();
         return false;
     }
+    // wait callback done
     ...
 }
 ```
