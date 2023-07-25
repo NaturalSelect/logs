@@ -215,6 +215,7 @@ bool MetaStoreImpl::Save(const std::string &dir,
     succ = kvStorage_->Checkpoint(dir,&files,[&cv](){
         cv.Signal();
     });
+    cv.Wait();
     if (!succ) {
         done->SetError(MetaStatusCode::SAVE_META_FAIL);
         return false;
@@ -227,7 +228,6 @@ bool MetaStoreImpl::Save(const std::string &dir,
     for (const auto &f : files) {
         writer->add_file(f);
     }
-    cv.Wait();
     done->SetSuccess();
     return true;
 }
