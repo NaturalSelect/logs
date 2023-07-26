@@ -14,7 +14,10 @@
 
 ## 方案
 
-### 为每一个partition都持久化一个`max applied index`。
+### 持久化`max applied index`。
+
+* 为每一个partition都持久化一个`max applied index`。
+* 同时维护一个`metadata applied index`。
 
 ```cpp
 enum KEY_TYPE : unsigned char {
