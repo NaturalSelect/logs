@@ -193,53 +193,46 @@ MetaStatusCode MetaStoreImpl::CreateDentry(const CreateDentryRequest *request,
 ```cpp
 bool MetaStoreImpl::Save(const std::string &dir,
                          OnSnapshotSaveDoneClosure *done) {
-    brpc::ClosureGuard doneGuard(done);
-    MetaStoreFStream fstream(&partitionMap_, kvStorage_,
-                             copysetNode_->GetPoolId(),
-                             copysetNode_->GetCopysetId());
-
-    const std::string metadata = dir + "/" + kMetaDataFilename;
-    bool succ = fstream.Save(metadata);
-    if (!succ) {
-        done->SetError(MetaStatusCode::SAVE_META_FAIL);
-        return false;
-    }
-
-    // checkpoint storage
-    ....
-    std::vector<std::string> files;
-    succ = kvStorage_->Checkpoint(dir,&files);
-    if (!succ) {
-        done->SetError(MetaStatusCode::SAVE_META_FAIL);
-        return false;
-    }
-    // add files to snapshot writer
-    // file is a relative path under the given directory
-    auto *writer = done->GetSnapshotWriter();
-    writer->add_file(kMetaDataFilename);
-
-    for (const auto &f : files) {
-        writer->add_file(f);
-    }
-    done->SetSuccess();
-    return true;
+    // lock is unnecessary
+    ...
 }
 ```
 
-
 ```cpp
-bool RocksDBStorage::Checkpoint(const std::string& dir,
-                                std::vector<std::string>* files) {
-    rocksdb::FlushOptions options;
-    options.wait = false;
-    options.allow_write_stall = true;
-    // TODO: add flush callback to listener's task list
-    auto status = db_->Flush(options, handles_);
-    if (!status.ok()) {
-        LOG(ERROR) << "Failed to flush DB, " << status.ToString();
-        return false;
+void CopysetNode::on_snapshot_save(braft::SnapshotWriter* writer,
+                                   braft::Closure* done) {
+    LOG(INFO) << "Copyset " << name_ << " saving snapshot to '"
+              << writer->get_path() << "'";
+
+    brpc::ClosureGuard doneGuard(done);
+
+    auto metricCtx = RaftSnapshotMetric::GetInstance().OnSnapshotSaveStart();
+    auto cleanMetricIfFailed = absl::MakeCleanup([metricCtx]() {
+        metricCtx->success = false;
+        RaftSnapshotMetric::GetInstance().OnSnapshotSaveDone(metricCtx);
+    });
+
+    // flush all flying operators
+    applyQueue_->Flush();
+
+    // save conf
+    std::string confFile = writer->get_path() + "/" + kConfEpochFilename;
+    if (0 != SaveConfEpoch(confFile)) {
+        LOG(ERROR) << "Copyset " << name_
+                   << " save snapshot failed, save epoch file failed";
+        done->status().set_error(errno, "Save conf file failed, error = %s",
+                                 strerror(errno));
+        return;
     }
-    // wait callback done
-    ...
+
+    writer->add_file(kConfEpochFilename);
+
+    // use async thread to do this
+    metaStore_->Save(writer->get_path(), new OnSnapshotSaveDoneClosureImpl(
+                                             this, writer, done, metricCtx));
+    doneGuard.release();
+
+    // `Cancel` only available for rvalue
+    std::move(cleanMetricIfFailed).Cancel();
 }
 ```
