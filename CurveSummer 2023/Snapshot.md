@@ -191,6 +191,23 @@ MetaStatusCode MetaStoreImpl::CreateDentry(const CreateDentryRequest *request,
 ### 保存Snapshot
 
 ```cpp
+bool RocksDBStorage::Checkpoint(const std::string& dir,
+                                std::vector<std::string>* files) {
+    rocksdb::FlushOptions options;
+    options.wait = true;
+    // we not allow this write stall due to flush
+    options.allow_write_stall = false;
+    auto status = db_->Flush(options, handles_);
+    if (!status.ok()) {
+        LOG(ERROR) << "Failed to flush DB, " << status.ToString();
+        return false;
+    }
+
+    ...
+}
+```
+
+```cpp
 bool MetaStoreImpl::Save(const std::string &dir,
                          OnSnapshotSaveDoneClosure *done) {
     // lock is unnecessary
