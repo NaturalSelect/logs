@@ -21,12 +21,9 @@
 * 只涉及到`rocksdb`。
 * 同时涉及到两者。
 
-对于每一个`Partition`而言，我们维护：
-* 一个`rocksdb applied index`，存储在rocksdb中。
-* 一个`MetaFStream applied index`存储在`MetaFStream`中。
-
-同时维护：
-* 一个全局`MetaFStream applied index`，存储在`MetaFStream`中。
+我们维护：
+* 一个`Partition`的`applied index`，存储在`rocksdb`中。
+* 一个`MetaStorage`的`applied index`，存储在`MetaFStream`中。
 
 `rocksdb`中每一个`Partition`的`applied index`的`key`使用`NameGenerator`产生：
 
@@ -53,16 +50,7 @@ message AppliedIndex {
 }
 ```
 
-`MetaFStream`中每一个`Partition`的`applied index`，序列化在`PartitionInfo`中。
-
-```proto
-message PartitionInfo {
-    ...
-    optional uint64 appliedIndex = 14; // partition applied index
-}
-```
-
-在`Partition`初始化时，读取两者的值并把其缓存到内存中：
+在`Partition`初始化时，读取`applied index`并把其缓存到内存中：
 
 ```cpp
 class Partition {
@@ -89,8 +77,6 @@ Partition::Partition(PartitionInfo partition,
         this->appliedIndex_ = index.index();
     }
     this->appliedIndexTableName_ = std::move(appliedKey);
-    // load applied index from MetaFStream
-    this->metaAppliedIndex_ = partition.appliedIndex();
     ...
 }
 ```
@@ -105,7 +91,6 @@ bool MetaStoreImpl::Load(const std::string &pathname) {
 
     // set the applied index
     this->appliedIndex_ = fstream.GetAppliedIndex();
-
     ...
 }
 ```
@@ -240,6 +225,141 @@ MetaStoreImpl::PrepareRenameTx(const PrepareRenameTxRequest *request,
                                 request->dentrys().end()};
     rc = partition->HandleRenameTx(dentrys);
     response->set_statuscode(rc);
+    return rc;
+}
+```
+
+```cpp
+MetaStatusCode Partition::HandleRenameTx(const std::vector<Dentry>& dentrys
+                                        ,std::uint64_t logIndex) {
+    for (const auto &it : dentrys) {
+        PRECHECK(it.fsid(), it.parentinodeid());
+    }
+    return dentryManager_->HandleRenameTx(dentrys,logIndex,this->appliedIndex);
+}
+```
+
+```cpp
+MetaStatusCode DentryManager::HandleRenameTx(
+    const std::vector<Dentry>& dentrys,std::uint64_t logIndex
+    ,std::uint64_t appliedIndex) {
+    for (const auto& dentry : dentrys) {
+        Log4Dentry("HandleRenameTx", dentry);
+    }
+    auto rc = txManager_->HandleRenameTx(dentrys,logIndex,appliedIndex);
+    Log4Code("HandleRenameTx", rc);
+    return rc;
+}
+```
+
+```cpp
+MetaStatusCode TxManager::HandleRenameTx(const std::vector<Dentry>& dentrys,std::uint64_t logIndex,std::uint64_t appliedIndex) {
+    ...
+    // Prepare for TX
+    auto renameTx = RenameTx(dentrys, storage_);
+
+    // set the log index to renameTx
+    // we will check it on dentry storage
+    renameTx.SetLogIndex(logIndex);
+    // set the applied index of partition
+    renameTx.SetAppliedIndex(appliedIndex);
+
+    if (!InsertPendingTx(renameTx)) {
+        LOG(ERROR) << "InsertPendingTx failed, renameTx: " << renameTx;
+        return MetaStatusCode::HANDLE_TX_FAILED;
+    } else if (!renameTx.Prepare()) {
+        LOG(ERROR) << "Prepare for RenameTx failed, renameTx: " << renameTx;
+        return MetaStatusCode::HANDLE_TX_FAILED;
+    }
+
+    return MetaStatusCode::OK;
+}
+```
+
+```cpp
+#define FOR_EACH_DENTRY(action) \
+do { \
+    for (const auto& dentry : dentrys_) { \
+        auto rc = storage_->HandleTx( \
+            DentryStorage::TX_OP_TYPE::action, dentry,this->logIndex_,this->appliedIndex_); \
+        if (rc != MetaStatusCode::OK) { \
+            return false; \
+        } \
+    } \
+} while (0)
+
+bool RenameTx::Prepare() {
+    FOR_EACH_DENTRY(PREPARE);
+    return true;
+}
+```
+
+```cpp
+MetaStatusCode DentryStorage::HandleTx(TX_OP_TYPE type, const Dentry& dentry
+                                        ,std::uint64_t logIndex,std::uint64_t appliedIndex) {
+    WriteLockGuard lg(rwLock_);
+    Status s;
+    Dentry out;
+    DentryVec vec;
+    DentryVector vector(&vec);
+    std::string skey = DentryKey(dentry);
+    MetaStatusCode rc = MetaStatusCode::OK;
+    // if log index is older than applied index
+    // we assume this tx operation is success
+    if(logIndex <= appliedIndex) {
+        return rc;
+    }
+    switch (type) {
+        case TX_OP_TYPE::PREPARE:
+            s = kvStorage_->SGet(table4Dentry_, skey, &vec);
+            if (!s.ok() && !s.IsNotFound()) {
+                rc = MetaStatusCode::STORAGE_INTERNAL_ERROR;
+                break;
+            }
+
+            // OK || NOT_FOUND
+            vector.Insert(dentry);
+            s = kvStorage_->SSet(table4Dentry_, skey, vec);
+            if (!s.ok()) {
+                rc = MetaStatusCode::STORAGE_INTERNAL_ERROR;
+            } else {
+                vector.Confirm(&nDentry_);
+            }
+            break;
+
+        case TX_OP_TYPE::COMMIT:
+            rc = Find(dentry, &out, &vec, true);
+            if (rc == MetaStatusCode::OK ||
+                rc == MetaStatusCode::NOT_FOUND) {
+                rc = MetaStatusCode::OK;
+            }
+            break;
+
+        case TX_OP_TYPE::ROLLBACK:
+            s = kvStorage_->SGet(table4Dentry_, skey, &vec);
+            if (!s.ok() && !s.IsNotFound()) {
+                rc = MetaStatusCode::STORAGE_INTERNAL_ERROR;
+                break;
+            }
+
+            // OK || NOT_FOUND
+            vector.Delete(dentry);
+            if (vec.dentrys_size() == 0) {  // delete directly
+                s = kvStorage_->SDel(table4Dentry_, skey);
+            } else {
+                s = kvStorage_->SSet(table4Dentry_, skey, vec);
+            }
+            if (!s.ok()) {
+                rc = MetaStatusCode::STORAGE_INTERNAL_ERROR;
+            } else {
+                vector.Confirm(&nDentry_);
+            }
+            break;
+
+        default:
+            rc = MetaStatusCode::PARAM_ERROR;
+    }
+
     return rc;
 }
 ```
