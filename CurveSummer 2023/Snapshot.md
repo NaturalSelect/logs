@@ -14,39 +14,38 @@
 
 ## 方案
 
-### 持久化`max applied index`。
+在curve中数据将被保存到`MetaFStream`和`rocksdb`中。
 
-* 为每一个partition都持久化一个`max applied index`。
-* 同时维护一个`metadata applied index`。
+数据的保存存在三种情况：
+* 只涉及到`MetaFStream`。
+* 只涉及到`rocksdb`。
+* 同时涉及到两者。
+
+对于每一个`Partition`而言，我们维护：
+* 一个`rocksdb applied index`，存储在rocksdb中。
+* 一个`MetaFStream applied index`存储在`MetaFStream`中。
+
+同时维护：
+* 一个全局`MetaFStream applied index`，存储在`MetaFStream`中。
+
+`rocksdb`中每一个`Partition`的`applied index`的`key`使用`NameGenerator`产生：
 
 ```cpp
 enum KEY_TYPE : unsigned char {
-    kTypeInode = 1,
-    kTypeS3ChunkInfo = 2,
-    kTypeDentry = 3,
-    kTypeVolumeExtent = 4,
-    kTypeInodeAuxInfo = 5,
-    kTypeBlockGroup = 6,
-    kTypeDeallocatableBlockGroup = 7,
-    kTypeDeallocatableInode = 8,
-
-    // applied key type
-    kTypeAppliedInde = 9
+    ...
+    kTypeAppliedIndex = 9
 };
 
 class NameGenerator {
  public:
     ...
-
-    // return applied key of partition
-    std::string GetAppliedIndexKeyName() const;
-
-    static size_t GetFixedLength();
+    std::string GetAppliedIndexTableName() const;
  private:
     ...
-    std::string keyName4AppliedIndex_;
 };
 ```
+
+其`applied index`定义如下：
 
 ```proto
 message AppliedIndex {
@@ -54,46 +53,113 @@ message AppliedIndex {
 }
 ```
 
-### 在每一个partition记录`applied index`和它的key。
+`MetaFStream`中每一个`Partition`的`applied index`，序列化在`PartitionInfo`中。
+
+```proto
+message PartitionInfo {
+    ...
+    optional uint64 appliedIndex = 14; // partition applied index
+}
+```
+
+在`Partition`初始化时，读取两者的值并把其缓存到内存中：
 
 ```cpp
 class Partition {
- public:
+    ...
     // max applied index of current partition
     std::uint64_t appliedIndex_;
-    std::string appliedIndexKey_;
+    std::string appliedIndexTableName_;
+
+    static const char *appliedIndexKey_ = "partition";
 };
-```
 
-同时在partition初始化时，检查这个key是否存在。
-
-```cpp
-// load applied index
-// for compatibility, we initialize x to 0
-this->appliedIndex_ = 0;
-std::string appliedKey = nameGen_->GetAppliedIndexKeyName();
-// check applied index key
-AppliedIndex index;
-auto result = kvStorage->SGet(appliedKey,"",&index);
-if(result.ok()) {
-    this->appliedIndex_ = index.index();
-}
-this->appliedIndexKey_ = std::move(appliedKey);
-```
-
-### 在执行`Partition`的函数时，进行Log Entires的过滤
-
-```cpp
-MetaStatusCode Partition::CreateDentry(const Dentry& dentry,std::uint64_t index) {
-    if (index <= appliedIndex_) {
-        return MetaStatusCode::OK;
+Partition::Partition(PartitionInfo partition,
+                     std::shared_ptr<KVStorage> kvStorage,
+                     bool startCompact, bool startVolumeDeallocate) {
+    ...
+    // load applied index
+    // for compatibility, we initialize x to 0
+    this->appliedIndex_ = 0;
+    std::string appliedKey = nameGen_->GetAppliedIndexTableName();
+    // check applied index key
+    AppliedIndex index;
+    auto result = kvStorage->SGet(appliedKey,appliedIndexKey,&index);
+    if(result.ok()) {
+        this->appliedIndex_ = index.index();
     }
-    PRECHECK(dentry.fsid(), dentry.parentinodeid());
+    this->appliedIndexTableName_ = std::move(appliedKey);
+    // load applied index from MetaFStream
+    this->metaAppliedIndex_ = partition.appliedIndex();
     ...
 }
 ```
 
-### 使用`Transaction`在修改kvstorage的同时修改`applied index`
+在`MetaStorage`初始化时，加载`MetaStorage`的`applied index`。
+
+```cpp
+bool MetaStoreImpl::Load(const std::string &pathname) {
+    // Load from raft snap file to memory
+    WriteLockGuard writeLockGuard(rwLock_);
+    ...
+
+    // set the applied index
+    this->appliedIndex_ = fstream.GetAppliedIndex();
+
+    ...
+}
+```
+
+在执行`MetaStorage`的操作时，必须传入一个`iter.index()`。
+
+```cpp
+#define OPERATOR_ON_APPLY(TYPE)                                                \
+    void TYPE##Operator::OnApply(int64_t index,                                \
+        ...
+        auto status = node_->GetMetaStore()->TYPE(                             \
+            static_cast<const TYPE##Request *>(request_),                      \
+            static_cast<TYPE##Response *>(response_),index);                   \
+        ...
+```
+
+## 针对只涉及到`rocksdb`的`MetaOperation`
+
+*以`CreateDentry`为例。*
+
+在执行`Partition`的函数时，进行Log Entires的过滤。
+
+```cpp
+MetaStatusCode MetaStoreImpl::CreateDentry(const CreateDentryRequest *request,
+                                           CreateDentryResponse *response,std::uint64_t logIndex) {
+    ReadLockGuard readLockGuard(rwLock_);
+    std::shared_ptr<Partition> partition;
+    GET_PARTITION_OR_RETURN(partition);
+
+    MetaStatusCode status = partition->CreateDentry(request->dentry().logIndex);
+    response->set_statuscode(status);
+    return status;
+}
+```
+
+```cpp
+MetaStatusCode Partition::CreateDentry(const Dentry& dentry,std::uint64_t logIndex) {
+    PRECHECK(dentry.fsid(), dentry.parentinodeid());
+    if (index <= appliedIndex_) {
+        return MetaStatusCode::OK;
+    }
+    MetaStatusCode ret = dentryManager_->CreateDentry(dentry,appliedIndexKey_,logIndex);
+    ...
+}
+```
+
+```cpp
+MetaStatusCode DentryManager::CreateDentry(const Dentry& dentry,const std::string &appliedIndexKey,std::uint64_t index) {
+    Log4Dentry("CreateDentry", dentry);
+    MetaStatusCode rc = dentryStorage_->Insert(dentry,appliedIndexKey,index);
+    Log4Code("CreateDentry", rc);
+    return rc;
+}
+```
 
 ```cpp
 MetaStatusCode DentryStorage::Insert(const Dentry& dentry,const std::string &appliedIndexKey,std::uint64_t index) {
@@ -136,62 +202,49 @@ MetaStatusCode DentryStorage::Insert(const Dentry& dentry,const std::string &app
     vector.Confirm(&nDentry_);
     return MetaStatusCode::OK;
 }
-
-MetaStatusCode DentryManager::CreateDentry(const Dentry& dentry,const std::string &appliedIndexKey,std::uint64_t index) {
-    Log4Dentry("CreateDentry", dentry);
-    MetaStatusCode rc = dentryStorage_->Insert(dentry,appliedIndexKey,index);
-    Log4Code("CreateDentry", rc);
-    return rc;
-}
-
-MetaStatusCode Partition::CreateDentry(const Dentry& dentry,std::uint64_t logIndex) {
-    // TODO(me): check applied index
-    PRECHECK(dentry.fsid(), dentry.parentinodeid());
-    MetaStatusCode ret = dentryManager_->CreateDentry(dentry,appliedIndexKey_,logIndex);
-    ...
-}
-
-MetaStatusCode MetaStoreImpl::CreateDentry(const CreateDentryRequest *request,
-                                           CreateDentryResponse *response,std::uint64_t logIndex) {
-    ReadLockGuard readLockGuard(rwLock_);
-    std::shared_ptr<Partition> partition;
-    GET_PARTITION_OR_RETURN(partition);
-
-    MetaStatusCode status = partition->CreateDentry(request->dentry().logIndex);
-    response->set_statuscode(status);
-    return status;
-}
-
-#define OPERATOR_ON_APPLY(TYPE)                                                \
-    void TYPE##Operator::OnApply(int64_t index,                                \
-                                 google::protobuf::Closure *done,              \
-                                 uint64_t startTimeUs) {                       \
-        brpc::ClosureGuard doneGuard(done);                                    \
-        uint64_t timeUs = TimeUtility::GetTimeofDayUs();                       \
-        node_->GetMetric()->WaitInQueueLatency(OperatorType::TYPE,             \
-                                               timeUs - startTimeUs);          \
-        auto status = node_->GetMetaStore()->TYPE(                             \
-            static_cast<const TYPE##Request *>(request_),                      \
-            static_cast<TYPE##Response *>(response_),index);                   \
-        uint64_t executeTime = TimeUtility::GetTimeofDayUs() - timeUs;         \
-        node_->GetMetric()->ExecuteLatency(OperatorType::TYPE, executeTime);   \
-        if (status == MetaStatusCode::OK) {                                    \
-            node_->UpdateAppliedIndex(index);                                  \
-            static_cast<TYPE##Response *>(response_)->set_appliedindex(        \
-                std::max<uint64_t>(index, node_->GetAppliedIndex()));          \
-            node_->GetMetric()->OnOperatorComplete(                            \
-                OperatorType::TYPE,                                            \
-                TimeUtility::GetTimeofDayUs() - startTimeUs, true);            \
-        } else {                                                               \
-            node_->GetMetric()->OnOperatorComplete(                            \
-                OperatorType::TYPE,                                            \
-                TimeUtility::GetTimeofDayUs() - startTimeUs, false);           \
-        }                                                                      \
-    }
-
 ```
 
-### 保存Snapshot
+## 针对只涉及到`MetaFStream`的`MetaOperation`
+
+*以`CreatePartition`为例。*
+
+```cpp
+MetaStatusCode
+MetaStoreImpl::CreatePartition(const CreatePartitionRequest *request,
+                               CreatePartitionResponse *response,std::uint64_t logIndex) {
+    WriteLockGuard writeLockGuard(rwLock_);
+    MetaStatusCode status;
+    // check index
+    if(this->appliedIndex >= logIndex) {
+        status = MetaStatusCode::OK;
+        response->set_statuscode(status);
+        return status;
+    }
+    ...
+}
+```
+
+## 针对涉及到两者的`MetaOperation`
+
+*以`PrepareRenameTx`为例。*
+
+```cpp
+MetaStatusCode
+MetaStoreImpl::PrepareRenameTx(const PrepareRenameTxRequest *request,
+                               PrepareRenameTxResponse *response,std::uint64_t logIndex) {
+    ReadLockGuard readLockGuard(rwLock_);
+    MetaStatusCode rc;
+    std::shared_ptr<Partition> partition;
+    GET_PARTITION_OR_RETURN(partition);
+    std::vector<Dentry> dentrys{request->dentrys().begin(),
+                                request->dentrys().end()};
+    rc = partition->HandleRenameTx(dentrys);
+    response->set_statuscode(rc);
+    return rc;
+}
+```
+
+### Snapshot的保存
 
 ```cpp
 bool RocksDBStorage::Checkpoint(const std::string& dir,
