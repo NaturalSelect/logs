@@ -1,4 +1,4 @@
-# Asynchronous Snapshot
+# Asynchronous Snapshot Scheme
 
 >题目： curvefs/metaserver: Can metaserver's raft snapshot implementation be asynchronous
 >
@@ -21,9 +21,10 @@
 * 只涉及到`rocksdb`。
 * 同时涉及到两者。
 
-我们维护：
-* 一个`Partition`的`applied index`，存储在`rocksdb`中。
-* 一个`MetaStorage`的`applied index`，存储在`MetaFStream`中。
+具体方案：
+* 维护一个`Partition`的`applied index`，存储在`rocksdb`中。
+* 对于修改`rocksdb`的操作必须检查`applied index`，如果修改过就跳过。
+* 对于修改in-memory 数据结构的操作（例如修改`Partition`的Table和`PendingTx`），则不需要check。
 
 `rocksdb`中每一个`Partition`的`applied index`的`key`使用`NameGenerator`产生：
 
@@ -77,20 +78,6 @@ Partition::Partition(PartitionInfo partition,
         this->appliedIndex_ = index.index();
     }
     this->appliedIndexTableName_ = std::move(appliedKey);
-    ...
-}
-```
-
-在`MetaStorage`初始化时，加载`MetaStorage`的`applied index`。
-
-```cpp
-bool MetaStoreImpl::Load(const std::string &pathname) {
-    // Load from raft snap file to memory
-    WriteLockGuard writeLockGuard(rwLock_);
-    ...
-
-    // set the applied index
-    this->appliedIndex_ = fstream.GetAppliedIndex();
     ...
 }
 ```
@@ -191,27 +178,21 @@ MetaStatusCode DentryStorage::Insert(const Dentry& dentry,const std::string &app
 
 ## 针对只涉及到`MetaFStream`的`MetaOperation`
 
-*以`CreatePartition`为例。*
+*以`CreatePartition`为例（目前只有对in-memory的partition map的修改是只涉及到`MetaFStream`的）。*
+
+不需要修改任何代码，让其replay即可。
 
 ```cpp
 MetaStatusCode
 MetaStoreImpl::CreatePartition(const CreatePartitionRequest *request,
                                CreatePartitionResponse *response,std::uint64_t logIndex) {
-    WriteLockGuard writeLockGuard(rwLock_);
-    MetaStatusCode status;
-    // check index
-    if(this->appliedIndex >= logIndex) {
-        status = MetaStatusCode::OK;
-        response->set_statuscode(status);
-        return status;
-    }
     ...
 }
 ```
 
 ## 针对涉及到两者的`MetaOperation`
 
-*以`PrepareRenameTx`为例。*
+*以`PrepareRenameTx`为例（目前这样`PrepareRenameTx`是涉及到两者的）。*
 
 ```cpp
 MetaStatusCode
@@ -294,6 +275,8 @@ bool RenameTx::Prepare() {
 }
 ```
 
+当`logIndex`小于等于`applied index`时，事务的`Prepare`操作已经在`rocksdb`落盘，直接返回`OK`。
+
 ```cpp
 MetaStatusCode DentryStorage::HandleTx(TX_OP_TYPE type, const Dentry& dentry
                                         ,std::uint64_t logIndex,std::uint64_t appliedIndex) {
@@ -309,76 +292,20 @@ MetaStatusCode DentryStorage::HandleTx(TX_OP_TYPE type, const Dentry& dentry
     if(logIndex <= appliedIndex) {
         return rc;
     }
-    switch (type) {
-        case TX_OP_TYPE::PREPARE:
-            s = kvStorage_->SGet(table4Dentry_, skey, &vec);
-            if (!s.ok() && !s.IsNotFound()) {
-                rc = MetaStatusCode::STORAGE_INTERNAL_ERROR;
-                break;
-            }
-
-            // OK || NOT_FOUND
-            vector.Insert(dentry);
-            s = kvStorage_->SSet(table4Dentry_, skey, vec);
-            if (!s.ok()) {
-                rc = MetaStatusCode::STORAGE_INTERNAL_ERROR;
-            } else {
-                vector.Confirm(&nDentry_);
-            }
-            break;
-
-        case TX_OP_TYPE::COMMIT:
-            rc = Find(dentry, &out, &vec, true);
-            if (rc == MetaStatusCode::OK ||
-                rc == MetaStatusCode::NOT_FOUND) {
-                rc = MetaStatusCode::OK;
-            }
-            break;
-
-        case TX_OP_TYPE::ROLLBACK:
-            s = kvStorage_->SGet(table4Dentry_, skey, &vec);
-            if (!s.ok() && !s.IsNotFound()) {
-                rc = MetaStatusCode::STORAGE_INTERNAL_ERROR;
-                break;
-            }
-
-            // OK || NOT_FOUND
-            vector.Delete(dentry);
-            if (vec.dentrys_size() == 0) {  // delete directly
-                s = kvStorage_->SDel(table4Dentry_, skey);
-            } else {
-                s = kvStorage_->SSet(table4Dentry_, skey, vec);
-            }
-            if (!s.ok()) {
-                rc = MetaStatusCode::STORAGE_INTERNAL_ERROR;
-            } else {
-                vector.Confirm(&nDentry_);
-            }
-            break;
-
-        default:
-            rc = MetaStatusCode::PARAM_ERROR;
-    }
-
-    return rc;
+    ...
 }
 ```
 
 ### Snapshot的保存
 
 ```cpp
-bool RocksDBStorage::Checkpoint(const std::string& dir,
-                                std::vector<std::string>* files) {
-    rocksdb::FlushOptions options;
-    options.wait = true;
-    // we not allow this write stall due to flush
-    options.allow_write_stall = false;
-    auto status = db_->Flush(options, handles_);
-    if (!status.ok()) {
-        LOG(ERROR) << "Failed to flush DB, " << status.ToString();
-        return false;
-    }
+void CopysetNode::on_snapshot_save(braft::SnapshotWriter* writer,
+                                   braft::Closure* done) {
+    ...
 
+    // we will start a thread or use thread pool in here
+    metaStore_->Save(writer->get_path(), new OnSnapshotSaveDoneClosureImpl(
+                                             this, writer, done, metricCtx));
     ...
 }
 ```
@@ -386,46 +313,37 @@ bool RocksDBStorage::Checkpoint(const std::string& dir,
 ```cpp
 bool MetaStoreImpl::Save(const std::string &dir,
                          OnSnapshotSaveDoneClosure *done) {
-    // lock is unnecessary
+    brpc::ClosureGuard doneGuard(done);
+
+    // we hold the write lock in this scope
+    {
+        WriteLockGuard writeLockGuard(rwLock_);
+        MetaStoreFStream fstream(&partitionMap_, kvStorage_,
+                             copysetNode_->GetPoolId(),
+                             copysetNode_->GetCopysetId());
+
+        const std::string metadata = dir + "/" + kMetaDataFilename;
+        if (!fstream.Save(metadata)) {
+            done->SetError(MetaStatusCode::SAVE_META_FAIL);
+            return false;
+        }
+    }
     ...
 }
 ```
 
 ```cpp
-void CopysetNode::on_snapshot_save(braft::SnapshotWriter* writer,
-                                   braft::Closure* done) {
-    LOG(INFO) << "Copyset " << name_ << " saving snapshot to '"
-              << writer->get_path() << "'";
-
-    brpc::ClosureGuard doneGuard(done);
-
-    auto metricCtx = RaftSnapshotMetric::GetInstance().OnSnapshotSaveStart();
-    auto cleanMetricIfFailed = absl::MakeCleanup([metricCtx]() {
-        metricCtx->success = false;
-        RaftSnapshotMetric::GetInstance().OnSnapshotSaveDone(metricCtx);
-    });
-
-    // flush all flying operators
-    applyQueue_->Flush();
-
-    // save conf
-    std::string confFile = writer->get_path() + "/" + kConfEpochFilename;
-    if (0 != SaveConfEpoch(confFile)) {
-        LOG(ERROR) << "Copyset " << name_
-                   << " save snapshot failed, save epoch file failed";
-        done->status().set_error(errno, "Save conf file failed, error = %s",
-                                 strerror(errno));
-        return;
+bool RocksDBStorage::Checkpoint(const std::string& dir,
+                                std::vector<std::string>* files) {
+    rocksdb::FlushOptions options;
+    options.wait = true;
+    // we not allow this write stall
+    options.allow_write_stall = false;
+    auto status = db_->Flush(options, handles_);
+    if (!status.ok()) {
+        LOG(ERROR) << "Failed to flush DB, " << status.ToString();
+        return false;
     }
-
-    writer->add_file(kConfEpochFilename);
-
-    // use async thread to do this
-    metaStore_->Save(writer->get_path(), new OnSnapshotSaveDoneClosureImpl(
-                                             this, writer, done, metricCtx));
-    doneGuard.release();
-
-    // `Cancel` only available for rvalue
-    std::move(cleanMetricIfFailed).Cancel();
+    ...
 }
 ```
