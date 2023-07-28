@@ -192,7 +192,7 @@ MetaStoreImpl::CreatePartition(const CreatePartitionRequest *request,
 
 ## 针对涉及到两者的`MetaOperation`
 
-*以`PrepareRenameTx`为例（目前这样`PrepareRenameTx`是涉及到两者的）。*
+*以`PrepareRenameTx`为例（目前只有事务操作是涉及到两者的）。*
 
 ```cpp
 MetaStatusCode
@@ -298,17 +298,20 @@ MetaStatusCode DentryStorage::HandleTx(TX_OP_TYPE type, const Dentry& dentry
 
 ### Snapshot的保存
 
+不需要修改`on_snapshot_save`。
+
 ```cpp
 void CopysetNode::on_snapshot_save(braft::SnapshotWriter* writer,
                                    braft::Closure* done) {
     ...
 
-    // we will start a thread or use thread pool in here
     metaStore_->Save(writer->get_path(), new OnSnapshotSaveDoneClosureImpl(
                                              this, writer, done, metricCtx));
     ...
 }
 ```
+
+使用异步线程flush rocksdb数据。
 
 ```cpp
 bool MetaStoreImpl::Save(const std::string &dir,
@@ -328,6 +331,7 @@ bool MetaStoreImpl::Save(const std::string &dir,
             return false;
         }
     }
+    // we will use async thread to execute continuation
     ...
 }
 ```
