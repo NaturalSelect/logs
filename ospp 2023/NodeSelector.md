@@ -80,8 +80,6 @@
         Node 5 select times 39
 ```
 
-[Full Log](https://github.com/NaturalSelect/logs/blob/main/ospp%202023/ticket.log)
-
 **MetaNode:**
 
 ```log
@@ -107,6 +105,8 @@
         Node 13 select times 17
         Node 12 select times 21
 ```
+
+[Full Log](https://github.com/NaturalSelect/logs/blob/main/ospp%202023/ticket.log)
 
 ## Fix Carry Weight
 
