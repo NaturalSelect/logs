@@ -262,7 +262,7 @@ MetaStatusCode TxManager::HandleRenameTx(const std::vector<Dentry>& dentrys,std:
 do { \
     for (const auto& dentry : dentrys_) { \
         auto rc = storage_->HandleTx( \
-            DentryStorage::TX_OP_TYPE::action, dentry,this->logIndex_,this->appliedIndex_); \
+            DentryStorage::TX_OP_TYPE::action, dentry,this->logIndex_,this->appliedIndex_,this->txId_); \
         if (rc != MetaStatusCode::OK) { \
             return false; \
         } \
@@ -275,24 +275,63 @@ bool RenameTx::Prepare() {
 }
 ```
 
-当`logIndex`小于等于`applied index`时，事务的`Prepare`操作已经在`rocksdb`落盘，直接返回`OK`。
+针对事务处理，我们引入proof of prepare，一个特殊的与事务相关的key。
 
 ```cpp
 MetaStatusCode DentryStorage::HandleTx(TX_OP_TYPE type, const Dentry& dentry
-                                        ,std::uint64_t logIndex,std::uint64_t appliedIndex) {
+                                ,std::uint64_t logIndex,std::uint64_t appliedIndex
+                                ,std::uint64_t txId) {
     WriteLockGuard lg(rwLock_);
+
     Status s;
     Dentry out;
     DentryVec vec;
     DentryVector vector(&vec);
     std::string skey = DentryKey(dentry);
     MetaStatusCode rc = MetaStatusCode::OK;
-    // if log index is older than applied index
-    // we assume this tx operation is success
-    if(logIndex <= appliedIndex) {
-        return rc;
+    // check old transaction status
+    std::string prepareKey = GetPrepareKey(txId);
+    if (logIndex <= appliedIndex) {
+        s = kvStorage_->SGet(table4Prepare_,prepareKey,...);
+        return s.ok();
     }
-    ...
+    switch (type) {
+        case TX_OP_TYPE::PREPARE:
+            s = kvStorage_->SGet(table4Dentry_, skey, &vec);
+            if (!s.ok() && !s.IsNotFound()) {
+                rc = MetaStatusCode::STORAGE_INTERNAL_ERROR;
+                break;
+            }
+
+            // OK || NOT_FOUND
+            // write prepare key to rocksdb
+            break;
+
+        case TX_OP_TYPE::COMMIT:
+            rc = Find(dentry, &out, &vec, true);
+            if (rc == MetaStatusCode::OK ||
+                rc == MetaStatusCode::NOT_FOUND) {
+                rc = MetaStatusCode::OK;
+                //remove prepare key
+            }
+            break;
+
+        case TX_OP_TYPE::ROLLBACK:
+            s = kvStorage_->SGet(table4Dentry_, skey, &vec);
+            if (!s.ok() && !s.IsNotFound()) {
+                rc = MetaStatusCode::STORAGE_INTERNAL_ERROR;
+                break;
+            }
+
+            // OK || NOT_FOUND
+            // remove prepare key
+            break;
+
+        default:
+            rc = MetaStatusCode::PARAM_ERROR;
+    }
+
+    return rc;
 }
 ```
 
