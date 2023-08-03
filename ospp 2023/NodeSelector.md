@@ -51,6 +51,8 @@
         Node 14 select times 25
 ```
 
+[Full Log](https://github.com/NaturalSelect/logs/blob/main/ospp%202023/carry.log)
+
 ## Ticket
 
 **DataNode:**
@@ -77,6 +79,8 @@
         Node 6 select times 19
         Node 5 select times 39
 ```
+
+[Full Log](https://github.com/NaturalSelect/logs/blob/main/ospp%202023/ticket.log)
 
 **MetaNode:**
 
@@ -155,3 +159,5 @@ node_selector_test.go:49: Meta Node 11
         Node 13 select times 19
         Node 14 select times 19
 ```
+
+[Full Log](https://github.com/NaturalSelect/logs/blob/main/ospp%202023/carry-fix.log)
