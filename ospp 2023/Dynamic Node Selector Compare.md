@@ -125,22 +125,6 @@
 ```
 
 ```log
-    node_selector_test.go:53: Meta Node 2
-        	Total Space:307200 MB
-        	Avaliable Space:161466 MB
-        
-    node_selector_test.go:53: Meta Node 3
-        	Total Space:409600 MB
-        	Avaliable Space:219571 MB
-        
-    node_selector_test.go:53: Meta Node 0
-        	Total Space:102400 MB
-        	Avaliable Space:50991 MB
-        
-    node_selector_test.go:53: Meta Node 1
-        	Total Space:204800 MB
-        	Avaliable Space:99330 MB
-        
     node_selector_test.go:237: Node 3 select times 41
         Node 2 select times 30
         Node 1 select times 19
