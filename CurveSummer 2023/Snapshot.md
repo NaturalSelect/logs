@@ -289,12 +289,9 @@ MetaStatusCode DentryStorage::HandleTx(TX_OP_TYPE type, const Dentry& dentry
     DentryVector vector(&vec);
     std::string skey = DentryKey(dentry);
     MetaStatusCode rc = MetaStatusCode::OK;
-    // check old transaction status
-    std::string prepareKey = GetPrepareKey(txId);
     switch (type) {
         case TX_OP_TYPE::PREPARE:
             if (logIndex <= appliedIndex) {
-                s = kvStorage_->SGet(table4Prepare_,prepareKey,...);
                 return s.ok();
             }
             s = kvStorage_->SGet(table4Dentry_, skey, &vec);
@@ -309,7 +306,20 @@ MetaStatusCode DentryStorage::HandleTx(TX_OP_TYPE type, const Dentry& dentry
 
         case TX_OP_TYPE::COMMIT:
             if (logIndex <= appliedIndex) {
-                return MetaStatusCode::OK;
+                // if we in replay process
+                // enter this scope, means that coordinator decide to commit transaction
+                // find prepare key
+                std::string prepareKey = GetPrepareKey(txId);
+                s = kvStorage_->SGet(table4Prepare_,prepareKey,...);
+                // if we cann't find the key
+                // means that it already commit in leader
+                if (!s.ok()) {
+                    return MetaStatusCode::OK;
+                }
+                // otherwise leader's commit process fails
+                rc = MetaStatusCode::STORAGE_INTERNAL_ERROR;
+                // we cannot remove prepare key
+                break;
             }
             rc = Find(dentry, &out, &vec, true);
             if (rc == MetaStatusCode::OK ||
@@ -321,7 +331,20 @@ MetaStatusCode DentryStorage::HandleTx(TX_OP_TYPE type, const Dentry& dentry
 
         case TX_OP_TYPE::ROLLBACK:
             if (logIndex <= appliedIndex) {
-                return MetaStatusCode::OK;
+                // if we in replay process
+                // enter this scope, means that coordinator decide to rollback transaction
+                // find prepare key
+                std::string prepareKey = GetPrepareKey(txId);
+                s = kvStorage_->SGet(table4Prepare_,prepareKey,...);
+                // if we cann't find the key
+                // means that it already rollback in leader
+                if (!s.ok()) {
+                    return MetaStatusCode::OK;
+                }
+                // otherwise leader's commit process fails
+                rc = MetaStatusCode::STORAGE_INTERNAL_ERROR;
+                // we cannot remove prepare key
+                break;
             }
             s = kvStorage_->SGet(table4Dentry_, skey, &vec);
             if (!s.ok() && !s.IsNotFound()) {
@@ -331,6 +354,81 @@ MetaStatusCode DentryStorage::HandleTx(TX_OP_TYPE type, const Dentry& dentry
 
             // OK || NOT_FOUND
             // remove prepare key
+            break;
+
+        default:
+            rc = MetaStatusCode::PARAM_ERROR;
+    }
+
+    return rc;
+}
+```
+
+### 备选方案 将事务相关数据结构存储在rocksdb中
+
+```cpp
+MetaStatusCode DentryStorage::HandleTx(TX_OP_TYPE type, const Dentry& dentry,
+                                        ,std::uint64_t logIndex,std::uint64_t appliedIndex
+                                        ,const Transaction& tx,const std::string &txKey) {
+    WriteLockGuard lg(rwLock_);
+
+    Status s;
+    Dentry out;
+    DentryVec vec;
+    DentryVector vector(&vec);
+    std::string skey = DentryKey(dentry);
+    MetaStatusCode rc = MetaStatusCode::OK;
+    if (logIndex <= appliedIndex) {
+        return MetaStatusCode::OK;
+    }
+    switch (type) {
+        case TX_OP_TYPE::PREPARE:
+            s = kvStorage_->SGet(table4Dentry_, skey, &vec);
+            if (!s.ok() && !s.IsNotFound()) {
+                rc = MetaStatusCode::STORAGE_INTERNAL_ERROR;
+                break;
+            }
+
+            // OK || NOT_FOUND
+            vector.Insert(dentry);
+            // put transaction status to rocksdb
+            s = kvStorage_->SSetWithTx(table4Dentry_, skey, vec,txKey,tx);
+            if (!s.ok()) {
+                rc = MetaStatusCode::STORAGE_INTERNAL_ERROR;
+            } else {
+                vector.Confirm(&nDentry_);
+            }
+            break;
+
+        case TX_OP_TYPE::COMMIT:
+            // put transaction status to rocksdb
+            rc = FindWithTx(dentry, &out, &vec, true,txKey,tx);
+            if (rc == MetaStatusCode::OK ||
+                rc == MetaStatusCode::NOT_FOUND) {
+                rc = MetaStatusCode::OK;
+            }
+            break;
+
+        case TX_OP_TYPE::ROLLBACK:
+            s = kvStorage_->SGet(table4Dentry_, skey, &vec);
+            if (!s.ok() && !s.IsNotFound()) {
+                rc = MetaStatusCode::STORAGE_INTERNAL_ERROR;
+                break;
+            }
+
+            // OK || NOT_FOUND
+            vector.Delete(dentry);
+            // put transaction status to rocksdb
+            if (vec.dentrys_size() == 0) {  // delete directly
+                s = kvStorage_->SDelWithTx(table4Dentry_, skey,txKey,tx);
+            } else {
+                s = kvStorage_->SSetWithTx(table4Dentry_, skey, vec,txKey,tx);
+            }
+            if (!s.ok()) {
+                rc = MetaStatusCode::STORAGE_INTERNAL_ERROR;
+            } else {
+                vector.Confirm(&nDentry_);
+            }
             break;
 
         default:
