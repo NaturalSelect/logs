@@ -291,12 +291,12 @@ MetaStatusCode DentryStorage::HandleTx(TX_OP_TYPE type, const Dentry& dentry
     MetaStatusCode rc = MetaStatusCode::OK;
     // check old transaction status
     std::string prepareKey = GetPrepareKey(txId);
-    if (logIndex <= appliedIndex) {
-        s = kvStorage_->SGet(table4Prepare_,prepareKey,...);
-        return s.ok();
-    }
     switch (type) {
         case TX_OP_TYPE::PREPARE:
+            if (logIndex <= appliedIndex) {
+                s = kvStorage_->SGet(table4Prepare_,prepareKey,...);
+                return s.ok();
+            }
             s = kvStorage_->SGet(table4Dentry_, skey, &vec);
             if (!s.ok() && !s.IsNotFound()) {
                 rc = MetaStatusCode::STORAGE_INTERNAL_ERROR;
@@ -308,6 +308,9 @@ MetaStatusCode DentryStorage::HandleTx(TX_OP_TYPE type, const Dentry& dentry
             break;
 
         case TX_OP_TYPE::COMMIT:
+            if (logIndex <= appliedIndex) {
+                return MetaStatusCode::OK;
+            }
             rc = Find(dentry, &out, &vec, true);
             if (rc == MetaStatusCode::OK ||
                 rc == MetaStatusCode::NOT_FOUND) {
@@ -317,6 +320,9 @@ MetaStatusCode DentryStorage::HandleTx(TX_OP_TYPE type, const Dentry& dentry
             break;
 
         case TX_OP_TYPE::ROLLBACK:
+            if (logIndex <= appliedIndex) {
+                return MetaStatusCode::OK;
+            }
             s = kvStorage_->SGet(table4Dentry_, skey, &vec);
             if (!s.ok() && !s.IsNotFound()) {
                 rc = MetaStatusCode::STORAGE_INTERNAL_ERROR;
