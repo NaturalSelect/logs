@@ -1,4 +1,4 @@
-# Update Nodeset Selector
+# Update Nodeset Selector & Node Selector
 
 ## Enable and disable zone
 
@@ -256,4 +256,396 @@ NodeSet-1:
     4         172.16.1.103:17210                                                   Yes         Active  
     2         172.16.1.101:17210                                                   Yes         Active  
     5         172.16.1.104:17210                                                   Yes         Active  
+```
+
+### Update Data Node Selector
+
+**Using Nodeset Update:**
+
+```log
+┌──(root💀LAPTOP-9TS0FG11)-[/home/nature/cubefs-master-dev]
+└─# ./build/bin/cfs-cli nodeset info 1
+NodeSet ID:       1
+Capacity:         18
+Zone:             default
+DataNodeSelector: CarryWeight
+MetaNodeSelector: CarryWeight
+DataTotal:     3.91 TB
+DataUsed:      145.26 GB
+DataAvail:     3.77 TB
+MetaTotal:     18.97 GB
+MetaUsed:      307.78 MB
+MetaAvail:     18.67 GB
+
+DataNodes[4]:
+  ID        ADDRESS                                                              WRITABLE    STATUS      TOTAL         USED          AVAIL     
+  9         172.16.1.104:17310                                                   Yes         Active      1001.85 GB    36.32 GB      965.54 GB 
+  8         172.16.1.103:17310                                                   Yes         Active      1001.85 GB    36.32 GB      965.54 GB 
+  7         172.16.1.102:17310                                                   Yes         Active      1001.85 GB    36.32 GB      965.54 GB 
+  6         172.16.1.101:17310                                                   Yes         Active      1001.85 GB    36.32 GB      965.54 GB 
+
+MetaNodes[4]:
+  ID        ADDRESS                                                              WRITABLE    STATUS      TOTAL         USED          AVAIL     
+  5         172.16.1.104:17210                                                   Yes         Active      4.74 GB       63.49 MB      4.68 GB   
+  4         172.16.1.103:17210                                                   Yes         Active      4.74 GB       79.41 MB      4.66 GB   
+  2         172.16.1.101:17210                                                   Yes         Active      4.74 GB       87.40 MB      4.66 GB   
+  3         172.16.1.102:17210                                                   Yes         Active      4.74 GB       77.48 MB      4.67 GB   
+
+┌──(root💀LAPTOP-9TS0FG11)-[/home/nature/cubefs-master-dev]
+└─# ./build/bin/cfs-cli nodeset update 1 --dataNodeSelector=Ticket
+success
+┌──(root💀LAPTOP-9TS0FG11)-[/home/nature/cubefs-master-dev]
+└─# ./build/bin/cfs-cli nodeset info 1
+NodeSet ID:       1
+Capacity:         18
+Zone:             default
+DataNodeSelector: Ticket
+MetaNodeSelector: CarryWeight
+DataTotal:     3.91 TB
+DataUsed:      145.26 GB
+DataAvail:     3.77 TB
+MetaTotal:     18.97 GB
+MetaUsed:      308.14 MB
+MetaAvail:     18.67 GB
+
+DataNodes[4]:
+  ID        ADDRESS                                                              WRITABLE    STATUS      TOTAL         USED          AVAIL     
+  7         172.16.1.102:17310                                                   Yes         Active      1001.85 GB    36.32 GB      965.54 GB 
+  6         172.16.1.101:17310                                                   Yes         Active      1001.85 GB    36.32 GB      965.54 GB 
+  9         172.16.1.104:17310                                                   Yes         Active      1001.85 GB    36.32 GB      965.54 GB 
+  8         172.16.1.103:17310                                                   Yes         Active      1001.85 GB    36.32 GB      965.54 GB 
+
+MetaNodes[4]:
+  ID        ADDRESS                                                              WRITABLE    STATUS      TOTAL         USED          AVAIL     
+  5         172.16.1.104:17210                                                   Yes         Active      4.74 GB       63.86 MB      4.68 GB   
+  4         172.16.1.103:17210                                                   Yes         Active      4.74 GB       79.41 MB      4.66 GB   
+  2         172.16.1.101:17210                                                   Yes         Active      4.74 GB       87.40 MB      4.66 GB   
+  3         172.16.1.102:17210                                                   Yes         Active      4.74 GB       77.48 MB      4.67 GB   
+
+```
+
+**Using Zone:**
+
+```log
+──(root💀LAPTOP-9TS0FG11)-[/home/nature/cubefs-master-dev]
+└─# ./build/bin/cfs-cli nodeset info 1
+NodeSet ID:       1
+Capacity:         18
+Zone:             default
+DataNodeSelector: Ticket
+MetaNodeSelector: Ticket
+DataTotal:     3.91 TB
+DataUsed:      145.32 GB
+DataAvail:     3.77 TB
+MetaTotal:     18.97 GB
+MetaUsed:      308.44 MB
+MetaAvail:     18.67 GB
+
+DataNodes[4]:
+  ID        ADDRESS                                                              WRITABLE    STATUS      TOTAL         USED          AVAIL     
+  9         172.16.1.104:17310                                                   Yes         Active      1001.85 GB    36.33 GB      965.52 GB 
+  8         172.16.1.103:17310                                                   Yes         Active      1001.85 GB    36.33 GB      965.52 GB 
+  7         172.16.1.102:17310                                                   Yes         Active      1001.85 GB    36.33 GB      965.52 GB 
+  6         172.16.1.101:17310                                                   Yes         Active      1001.85 GB    36.33 GB      965.52 GB 
+
+MetaNodes[4]:
+  ID        ADDRESS                                                              WRITABLE    STATUS      TOTAL         USED          AVAIL     
+  5         172.16.1.104:17210                                                   Yes         Active      4.74 GB       63.86 MB      4.68 GB   
+  4         172.16.1.103:17210                                                   Yes         Active      4.74 GB       79.71 MB      4.66 GB   
+  2         172.16.1.101:17210                                                   Yes         Active      4.74 GB       87.40 MB      4.66 GB   
+  3         172.16.1.102:17210                                                   Yes         Active      4.74 GB       77.48 MB      4.67 GB   
+
+┌──(root💀LAPTOP-9TS0FG11)-[/home/nature/cubefs-master-dev]
+└─# ./build/bin/cfs-cli zone update default --dataNodeSelector=CarryWeight
+Zone default has been update successfully!
+
+┌──(root💀LAPTOP-9TS0FG11)-[/home/nature/cubefs-master-dev]
+└─# ./build/bin/cfs-cli nodeset info 1
+NodeSet ID:       1
+Capacity:         18
+Zone:             default
+DataNodeSelector: CarryWeight
+MetaNodeSelector: Ticket
+DataTotal:     3.91 TB
+DataUsed:      145.32 GB
+DataAvail:     3.77 TB
+MetaTotal:     18.97 GB
+MetaUsed:      308.44 MB
+MetaAvail:     18.67 GB
+
+DataNodes[4]:
+  ID        ADDRESS                                                              WRITABLE    STATUS      TOTAL         USED          AVAIL     
+  9         172.16.1.104:17310                                                   Yes         Active      1001.85 GB    36.33 GB      965.52 GB 
+  8         172.16.1.103:17310                                                   Yes         Active      1001.85 GB    36.33 GB      965.52 GB 
+  7         172.16.1.102:17310                                                   Yes         Active      1001.85 GB    36.33 GB      965.52 GB 
+  6         172.16.1.101:17310                                                   Yes         Active      1001.85 GB    36.33 GB      965.52 GB 
+
+MetaNodes[4]:
+  ID        ADDRESS                                                              WRITABLE    STATUS      TOTAL         USED          AVAIL     
+  3         172.16.1.102:17210                                                   Yes         Active      4.74 GB       77.48 MB      4.67 GB   
+  5         172.16.1.104:17210                                                   Yes         Active      4.74 GB       63.86 MB      4.68 GB   
+  4         172.16.1.103:17210                                                   Yes         Active      4.74 GB       79.71 MB      4.66 GB   
+  2         172.16.1.101:17210                                                   Yes         Active      4.74 GB       87.40 MB      4.66 GB   
+
+```
+
+**Using Cluster Set:**
+
+```log
+┌──(root💀LAPTOP-9TS0FG11)-[/home/nature/cubefs-master-dev]
+└─# ./build/bin/cfs-cli nodeset info 1
+NodeSet ID:       1
+Capacity:         18
+Zone:             default
+DataNodeSelector: CarryWeight
+MetaNodeSelector: CarryWeight
+DataTotal:     3.91 TB
+DataUsed:      145.32 GB
+DataAvail:     3.77 TB
+MetaTotal:     18.97 GB
+MetaUsed:      308.44 MB
+MetaAvail:     18.67 GB
+
+DataNodes[4]:
+  ID        ADDRESS                                                              WRITABLE    STATUS      TOTAL         USED          AVAIL     
+  7         172.16.1.102:17310                                                   Yes         Active      1001.85 GB    36.33 GB      965.52 GB 
+  6         172.16.1.101:17310                                                   Yes         Active      1001.85 GB    36.33 GB      965.52 GB 
+  9         172.16.1.104:17310                                                   Yes         Active      1001.85 GB    36.33 GB      965.52 GB 
+  8         172.16.1.103:17310                                                   Yes         Active      1001.85 GB    36.33 GB      965.52 GB 
+
+MetaNodes[4]:
+  ID        ADDRESS                                                              WRITABLE    STATUS      TOTAL         USED          AVAIL     
+  3         172.16.1.102:17210                                                   Yes         Active      4.74 GB       77.48 MB      4.67 GB   
+  5         172.16.1.104:17210                                                   Yes         Active      4.74 GB       63.86 MB      4.68 GB   
+  4         172.16.1.103:17210                                                   Yes         Active      4.74 GB       79.71 MB      4.66 GB   
+  2         172.16.1.101:17210                                                   Yes         Active      4.74 GB       87.40 MB      4.66 GB   
+
+┌──(root💀LAPTOP-9TS0FG11)-[/home/nature/cubefs-master-dev]
+└─# ./build/bin/cfs-cli cluster set --dataNodeSelector=Ticket
+Cluster parameters has been set successfully. 
+
+┌──(root💀LAPTOP-9TS0FG11)-[/home/nature/cubefs-master-dev]
+└─# ./build/bin/cfs-cli nodeset info 1
+NodeSet ID:       1
+Capacity:         18
+Zone:             default
+DataNodeSelector: Ticket
+MetaNodeSelector: CarryWeight
+DataTotal:     3.91 TB
+DataUsed:      145.32 GB
+DataAvail:     3.77 TB
+MetaTotal:     18.97 GB
+MetaUsed:      308.44 MB
+MetaAvail:     18.67 GB
+
+DataNodes[4]:
+  ID        ADDRESS                                                              WRITABLE    STATUS      TOTAL         USED          AVAIL     
+  9         172.16.1.104:17310                                                   Yes         Active      1001.85 GB    36.33 GB      965.52 GB 
+  8         172.16.1.103:17310                                                   Yes         Active      1001.85 GB    36.33 GB      965.52 GB 
+  7         172.16.1.102:17310                                                   Yes         Active      1001.85 GB    36.33 GB      965.52 GB 
+  6         172.16.1.101:17310                                                   Yes         Active      1001.85 GB    36.33 GB      965.52 GB 
+
+MetaNodes[4]:
+  ID        ADDRESS                                                              WRITABLE    STATUS      TOTAL         USED          AVAIL     
+  5         172.16.1.104:17210                                                   Yes         Active      4.74 GB       63.86 MB      4.68 GB   
+  4         172.16.1.103:17210                                                   Yes         Active      4.74 GB       79.71 MB      4.66 GB   
+  2         172.16.1.101:17210                                                   Yes         Active      4.74 GB       87.40 MB      4.66 GB   
+  3         172.16.1.102:17210                                                   Yes         Active      4.74 GB       77.48 MB      4.67 GB   
+
+```
+
+### Update Meta Node Selector
+
+**Using Nodeset Update:**
+
+```log
+┌──(root💀LAPTOP-9TS0FG11)-[/home/nature/cubefs-master-dev]
+└─# ./build/bin/cfs-cli nodeset info 1
+NodeSet ID:       1
+Capacity:         18
+Zone:             default
+DataNodeSelector: Ticket
+MetaNodeSelector: CarryWeight
+DataTotal:     3.91 TB
+DataUsed:      145.26 GB
+DataAvail:     3.77 TB
+MetaTotal:     18.97 GB
+MetaUsed:      308.14 MB
+MetaAvail:     18.67 GB
+
+DataNodes[4]:
+  ID        ADDRESS                                                              WRITABLE    STATUS      TOTAL         USED          AVAIL     
+  7         172.16.1.102:17310                                                   Yes         Active      1001.85 GB    36.32 GB      965.54 GB 
+  6         172.16.1.101:17310                                                   Yes         Active      1001.85 GB    36.32 GB      965.54 GB 
+  9         172.16.1.104:17310                                                   Yes         Active      1001.85 GB    36.32 GB      965.54 GB 
+  8         172.16.1.103:17310                                                   Yes         Active      1001.85 GB    36.32 GB      965.54 GB 
+
+MetaNodes[4]:
+  ID        ADDRESS                                                              WRITABLE    STATUS      TOTAL         USED          AVAIL     
+  5         172.16.1.104:17210                                                   Yes         Active      4.74 GB       63.86 MB      4.68 GB   
+  4         172.16.1.103:17210                                                   Yes         Active      4.74 GB       79.41 MB      4.66 GB   
+  2         172.16.1.101:17210                                                   Yes         Active      4.74 GB       87.40 MB      4.66 GB   
+  3         172.16.1.102:17210                                                   Yes         Active      4.74 GB       77.48 MB      4.67 GB   
+
+┌──(root💀LAPTOP-9TS0FG11)-[/home/nature/cubefs-master-dev]
+└─# ./build/bin/cfs-cli nodeset update 1 --metaNodeSelector=Ticket
+success
+┌──(root💀LAPTOP-9TS0FG11)-[/home/nature/cubefs-master-dev]
+└─# ./build/bin/cfs-cli nodeset info 1
+NodeSet ID:       1
+Capacity:         18
+Zone:             default
+DataNodeSelector: Ticket
+MetaNodeSelector: Ticket
+DataTotal:     3.91 TB
+DataUsed:      145.32 GB
+DataAvail:     3.77 TB
+MetaTotal:     18.97 GB
+MetaUsed:      308.44 MB
+MetaAvail:     18.67 GB
+
+DataNodes[4]:
+  ID        ADDRESS                                                              WRITABLE    STATUS      TOTAL         USED          AVAIL     
+  9         172.16.1.104:17310                                                   Yes         Active      1001.85 GB    36.33 GB      965.52 GB 
+  8         172.16.1.103:17310                                                   Yes         Active      1001.85 GB    36.33 GB      965.52 GB 
+  7         172.16.1.102:17310                                                   Yes         Active      1001.85 GB    36.33 GB      965.52 GB 
+  6         172.16.1.101:17310                                                   Yes         Active      1001.85 GB    36.33 GB      965.52 GB 
+
+MetaNodes[4]:
+  ID        ADDRESS                                                              WRITABLE    STATUS      TOTAL         USED          AVAIL     
+  5         172.16.1.104:17210                                                   Yes         Active      4.74 GB       63.86 MB      4.68 GB   
+  4         172.16.1.103:17210                                                   Yes         Active      4.74 GB       79.71 MB      4.66 GB   
+  2         172.16.1.101:17210                                                   Yes         Active      4.74 GB       87.40 MB      4.66 GB   
+  3         172.16.1.102:17210                                                   Yes         Active      4.74 GB       77.48 MB      4.67 GB   
+
+```
+
+**Using Zone:**
+
+```log
+┌──(root💀LAPTOP-9TS0FG11)-[/home/nature/cubefs-master-dev]
+└─# ./build/bin/cfs-cli nodeset info 1
+NodeSet ID:       1
+Capacity:         18
+Zone:             default
+DataNodeSelector: CarryWeight
+MetaNodeSelector: Ticket
+DataTotal:     3.91 TB
+DataUsed:      145.32 GB
+DataAvail:     3.77 TB
+MetaTotal:     18.97 GB
+MetaUsed:      308.44 MB
+MetaAvail:     18.67 GB
+
+DataNodes[4]:
+  ID        ADDRESS                                                              WRITABLE    STATUS      TOTAL         USED          AVAIL     
+  9         172.16.1.104:17310                                                   Yes         Active      1001.85 GB    36.33 GB      965.52 GB 
+  8         172.16.1.103:17310                                                   Yes         Active      1001.85 GB    36.33 GB      965.52 GB 
+  7         172.16.1.102:17310                                                   Yes         Active      1001.85 GB    36.33 GB      965.52 GB 
+  6         172.16.1.101:17310                                                   Yes         Active      1001.85 GB    36.33 GB      965.52 GB 
+
+MetaNodes[4]:
+  ID        ADDRESS                                                              WRITABLE    STATUS      TOTAL         USED          AVAIL     
+  3         172.16.1.102:17210                                                   Yes         Active      4.74 GB       77.48 MB      4.67 GB   
+  5         172.16.1.104:17210                                                   Yes         Active      4.74 GB       63.86 MB      4.68 GB   
+  4         172.16.1.103:17210                                                   Yes         Active      4.74 GB       79.71 MB      4.66 GB   
+  2         172.16.1.101:17210                                                   Yes         Active      4.74 GB       87.40 MB      4.66 GB   
+
+┌──(root💀LAPTOP-9TS0FG11)-[/home/nature/cubefs-master-dev]
+└─# ./build/bin/cfs-cli zone update default --metaNodeSelector=CarryWeight
+Zone default has been update successfully!
+
+┌──(root💀LAPTOP-9TS0FG11)-[/home/nature/cubefs-master-dev]
+└─# ./build/bin/cfs-cli nodeset info 1
+NodeSet ID:       1
+Capacity:         18
+Zone:             default
+DataNodeSelector: CarryWeight
+MetaNodeSelector: CarryWeight
+DataTotal:     3.91 TB
+DataUsed:      145.32 GB
+DataAvail:     3.77 TB
+MetaTotal:     18.97 GB
+MetaUsed:      308.44 MB
+MetaAvail:     18.67 GB
+
+DataNodes[4]:
+  ID        ADDRESS                                                              WRITABLE    STATUS      TOTAL         USED          AVAIL     
+  7         172.16.1.102:17310                                                   Yes         Active      1001.85 GB    36.33 GB      965.52 GB 
+  6         172.16.1.101:17310                                                   Yes         Active      1001.85 GB    36.33 GB      965.52 GB 
+  9         172.16.1.104:17310                                                   Yes         Active      1001.85 GB    36.33 GB      965.52 GB 
+  8         172.16.1.103:17310                                                   Yes         Active      1001.85 GB    36.33 GB      965.52 GB 
+
+MetaNodes[4]:
+  ID        ADDRESS                                                              WRITABLE    STATUS      TOTAL         USED          AVAIL     
+  3         172.16.1.102:17210                                                   Yes         Active      4.74 GB       77.48 MB      4.67 GB   
+  5         172.16.1.104:17210                                                   Yes         Active      4.74 GB       63.86 MB      4.68 GB   
+  4         172.16.1.103:17210                                                   Yes         Active      4.74 GB       79.71 MB      4.66 GB   
+  2         172.16.1.101:17210                                                   Yes         Active      4.74 GB       87.40 MB      4.66 GB   
+
+```
+
+**Using Cluster Set:**
+
+```log
+┌──(root💀LAPTOP-9TS0FG11)-[/home/nature/cubefs-master-dev]
+└─# ./build/bin/cfs-cli nodeset info 1
+NodeSet ID:       1
+Capacity:         18
+Zone:             default
+DataNodeSelector: Ticket
+MetaNodeSelector: CarryWeight
+DataTotal:     3.91 TB
+DataUsed:      145.32 GB
+DataAvail:     3.77 TB
+MetaTotal:     18.97 GB
+MetaUsed:      308.44 MB
+MetaAvail:     18.67 GB
+
+DataNodes[4]:
+  ID        ADDRESS                                                              WRITABLE    STATUS      TOTAL         USED          AVAIL     
+  9         172.16.1.104:17310                                                   Yes         Active      1001.85 GB    36.33 GB      965.52 GB 
+  8         172.16.1.103:17310                                                   Yes         Active      1001.85 GB    36.33 GB      965.52 GB 
+  7         172.16.1.102:17310                                                   Yes         Active      1001.85 GB    36.33 GB      965.52 GB 
+  6         172.16.1.101:17310                                                   Yes         Active      1001.85 GB    36.33 GB      965.52 GB 
+
+MetaNodes[4]:
+  ID        ADDRESS                                                              WRITABLE    STATUS      TOTAL         USED          AVAIL     
+  5         172.16.1.104:17210                                                   Yes         Active      4.74 GB       63.86 MB      4.68 GB   
+  4         172.16.1.103:17210                                                   Yes         Active      4.74 GB       79.71 MB      4.66 GB   
+  2         172.16.1.101:17210                                                   Yes         Active      4.74 GB       87.40 MB      4.66 GB   
+  3         172.16.1.102:17210                                                   Yes         Active      4.74 GB       77.48 MB      4.67 GB   
+
+┌──(root💀LAPTOP-9TS0FG11)-[/home/nature/cubefs-master-dev]
+└─# ./build/bin/cfs-cli cluster set --metaNodeSelector=Ticket
+Cluster parameters has been set successfully. 
+
+┌──(root💀LAPTOP-9TS0FG11)-[/home/nature/cubefs-master-dev]
+└─# ./build/bin/cfs-cli nodeset info 1
+NodeSet ID:       1
+Capacity:         18
+Zone:             default
+DataNodeSelector: Ticket
+MetaNodeSelector: Ticket
+DataTotal:     3.91 TB
+DataUsed:      145.32 GB
+DataAvail:     3.77 TB
+MetaTotal:     18.97 GB
+MetaUsed:      308.44 MB
+MetaAvail:     18.67 GB
+
+DataNodes[4]:
+  ID        ADDRESS                                                              WRITABLE    STATUS      TOTAL         USED          AVAIL     
+  9         172.16.1.104:17310                                                   Yes         Active      1001.85 GB    36.33 GB      965.52 GB 
+  8         172.16.1.103:17310                                                   Yes         Active      1001.85 GB    36.33 GB      965.52 GB 
+  7         172.16.1.102:17310                                                   Yes         Active      1001.85 GB    36.33 GB      965.52 GB 
+  6         172.16.1.101:17310                                                   Yes         Active      1001.85 GB    36.33 GB      965.52 GB 
+
+MetaNodes[4]:
+  ID        ADDRESS                                                              WRITABLE    STATUS      TOTAL         USED          AVAIL     
+  2         172.16.1.101:17210                                                   Yes         Active      4.74 GB       87.40 MB      4.66 GB   
+  3         172.16.1.102:17210                                                   Yes         Active      4.74 GB       77.48 MB      4.67 GB   
+  5         172.16.1.104:17210                                                   Yes         Active      4.74 GB       63.86 MB      4.68 GB   
+  4         172.16.1.103:17210                                                   Yes         Active      4.74 GB       79.71 MB      4.66 GB   
+
 ```
