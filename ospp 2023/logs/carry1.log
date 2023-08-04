@@ -1,0 +1,217 @@
+2023/08/04 20:19:24 heartbeatPort[5901],replicaPort[5902]
+2023/08/04 20:19:24 127.0.0.1:8080
+2023/08/04 20:19:24 retainLogs= 20000
+2023/08/04 20:19:24 peers[["nodeID":"1","peerID":"0","priority":"0","type":"PeerNormal","heartbeatPort":"5901","ReplicaPort":"5902"]],tickInterval[500],electionTick[6]
+[1:127.0.0.1:8080] 127.0.0.1:8080
+2023/08/04 20:19:29 action[loadMetadata] begin
+2023/08/04 20:19:29 action[loadMetadata] end
+data node [127.0.0.1:9101] report heartbeat to master,err:<nil>
+data node [127.0.0.1:9102] report heartbeat to master,err:<nil>
+data node [127.0.0.1:9103] report heartbeat to master,err:<nil>
+data node [127.0.0.1:9104] report heartbeat to master,err:<nil>
+data node [127.0.0.1:9105] report heartbeat to master,err:<nil>
+data node [127.0.0.1:9106] report heartbeat to master,err:<nil>
+remote[127.0.0.1:53044],local[127.0.0.1:8101]
+remote [127.0.0.1:53044] req [OpMetaNodeHeartbeat]
+meta node [127.0.0.1:8101] heartbeat,err:<nil>
+remote[127.0.0.1:56836],local[127.0.0.1:8102]
+remote [127.0.0.1:56836] req [OpMetaNodeHeartbeat]
+meta node [127.0.0.1:8102] heartbeat,err:<nil>
+remote[127.0.0.1:46546],local[127.0.0.1:8103]
+remote [127.0.0.1:46546] req [OpMetaNodeHeartbeat]
+meta node [127.0.0.1:8103] heartbeat,err:<nil>
+remote[127.0.0.1:52836],local[127.0.0.1:8104]
+remote [127.0.0.1:52836] req [OpMetaNodeHeartbeat]
+remote[127.0.0.1:43138],local[127.0.0.1:8106]
+remote[127.0.0.1:48780],local[127.0.0.1:8105]
+remote [127.0.0.1:43138] req [OpMetaNodeHeartbeat]
+meta node [127.0.0.1:8104] heartbeat,err:<nil>
+remote [127.0.0.1:48780] req [OpMetaNodeHeartbeat]
+meta node [127.0.0.1:8105] heartbeat,err:<nil>
+meta node [127.0.0.1:8106] heartbeat,err:<nil>
+data node [127.0.0.1:9101] report heartbeat to master,err:<nil>
+data node [127.0.0.1:9102] report heartbeat to master,err:<nil>
+data node [127.0.0.1:9103] report heartbeat to master,err:<nil>
+data node [127.0.0.1:9104] report heartbeat to master,err:<nil>
+data node [127.0.0.1:9105] report heartbeat to master,err:<nil>
+data node [127.0.0.1:9106] report heartbeat to master,err:<nil>
+remote[127.0.0.1:53052],local[127.0.0.1:8101]
+remote [127.0.0.1:53052] req [OpMetaNodeHeartbeat]
+meta node [127.0.0.1:8101] heartbeat,err:<nil>
+remote[127.0.0.1:56838],local[127.0.0.1:8102]
+remote [127.0.0.1:56838] req [OpMetaNodeHeartbeat]
+meta node [127.0.0.1:8102] heartbeat,err:<nil>
+remote[127.0.0.1:46554],local[127.0.0.1:8103]
+remote [127.0.0.1:46554] req [OpMetaNodeHeartbeat]
+meta node [127.0.0.1:8103] heartbeat,err:<nil>
+remote[127.0.0.1:52844],local[127.0.0.1:8104]
+remote [127.0.0.1:52844] req [OpMetaNodeHeartbeat]
+meta node [127.0.0.1:8104] heartbeat,err:<nil>
+remote[127.0.0.1:48786],local[127.0.0.1:8105]
+remote [127.0.0.1:48786] req [OpMetaNodeHeartbeat]
+meta node [127.0.0.1:8105] heartbeat,err:<nil>
+remote[127.0.0.1:43142],local[127.0.0.1:8106]
+remote [127.0.0.1:43142] req [OpMetaNodeHeartbeat]
+meta node [127.0.0.1:8106] heartbeat,err:<nil>
+data node [127.0.0.1:9101] report heartbeat to master,err:<nil>
+data node [127.0.0.1:9102] report heartbeat to master,err:<nil>
+data node [127.0.0.1:9103] report heartbeat to master,err:<nil>
+data node [127.0.0.1:9104] report heartbeat to master,err:<nil>
+data node [127.0.0.1:9105] report heartbeat to master,err:<nil>
+data node [127.0.0.1:9106] report heartbeat to master,err:<nil>
+remote[127.0.0.1:44984],local[127.0.0.1:8101]
+remote [127.0.0.1:44984] req [OpMetaNodeHeartbeat]
+meta node [127.0.0.1:8101] heartbeat,err:<nil>
+remote[127.0.0.1:44896],local[127.0.0.1:8102]
+remote [127.0.0.1:44896] req [OpMetaNodeHeartbeat]
+meta node [127.0.0.1:8102] heartbeat,err:<nil>
+remote[127.0.0.1:50366],local[127.0.0.1:8103]
+remote [127.0.0.1:50366] req [OpMetaNodeHeartbeat]
+meta node [127.0.0.1:8103] heartbeat,err:<nil>
+remote[127.0.0.1:49486],local[127.0.0.1:8104]
+remote [127.0.0.1:49486] req [OpMetaNodeHeartbeat]
+meta node [127.0.0.1:8104] heartbeat,err:<nil>
+remote[127.0.0.1:40188],local[127.0.0.1:8105]
+remote [127.0.0.1:40188] req [OpMetaNodeHeartbeat]
+meta node [127.0.0.1:8105] heartbeat,err:<nil>
+remote[127.0.0.1:58938],local[127.0.0.1:8106]
+remote [127.0.0.1:58938] req [OpMetaNodeHeartbeat]
+meta node [127.0.0.1:8106] heartbeat,err:<nil>
+remote[127.0.0.1:40204],local[127.0.0.1:8105]
+remote[127.0.0.1:49502],local[127.0.0.1:8104]
+remote[127.0.0.1:50378],local[127.0.0.1:8103]
+remote [127.0.0.1:50378] req [OpCreateMetaPartition]
+remote [127.0.0.1:40204] req [OpCreateMetaPartition]
+remote [127.0.0.1:49502] req [OpCreateMetaPartition]
+meta node [127.0.0.1:8103] create meta partition,err:<nil>
+meta node [127.0.0.1:8105] create meta partition,err:<nil>
+meta node [127.0.0.1:8104] create meta partition,err:<nil>
+remote[127.0.0.1:49508],local[127.0.0.1:8104]
+remote[127.0.0.1:40214],local[127.0.0.1:8105]
+remote[127.0.0.1:58946],local[127.0.0.1:8106]
+remote [127.0.0.1:49508] req [OpCreateMetaPartition]
+remote [127.0.0.1:58946] req [OpCreateMetaPartition]
+remote [127.0.0.1:40214] req [OpCreateMetaPartition]
+meta node [127.0.0.1:8104] create meta partition,err:<nil>
+meta node [127.0.0.1:8106] create meta partition,err:<nil>
+meta node [127.0.0.1:8105] create meta partition,err:<nil>
+remote[127.0.0.1:58954],local[127.0.0.1:8106]
+remote [127.0.0.1:58954] req [OpCreateMetaPartition]
+remote[127.0.0.1:40218],local[127.0.0.1:8105]
+remote [127.0.0.1:40218] req [OpCreateMetaPartition]
+remote[127.0.0.1:50382],local[127.0.0.1:8103]
+meta node [127.0.0.1:8106] create meta partition,err:<nil>
+remote [127.0.0.1:50382] req [OpCreateMetaPartition]
+meta node [127.0.0.1:8105] create meta partition,err:<nil>
+meta node [127.0.0.1:8103] create meta partition,err:<nil>
+data node [127.0.0.1:9105] create data partition,id[addr[127.0.0.1:9105]_op[96]_DataPartitionID[1]],err:<nil>
+data node [127.0.0.1:9104] create data partition,id[addr[127.0.0.1:9104]_op[96]_DataPartitionID[1]],err:<nil>
+data node [127.0.0.1:9106] create data partition,id[addr[127.0.0.1:9106]_op[96]_DataPartitionID[1]],err:<nil>
+data node [127.0.0.1:9103] create data partition,id[addr[127.0.0.1:9103]_op[96]_DataPartitionID[2]],err:<nil>
+data node [127.0.0.1:9105] create data partition,id[addr[127.0.0.1:9105]_op[96]_DataPartitionID[2]],err:<nil>
+data node [127.0.0.1:9104] create data partition,id[addr[127.0.0.1:9104]_op[96]_DataPartitionID[2]],err:<nil>
+data node [127.0.0.1:9106] create data partition,id[addr[127.0.0.1:9106]_op[96]_DataPartitionID[3]],err:<nil>
+data node [127.0.0.1:9103] create data partition,id[addr[127.0.0.1:9103]_op[96]_DataPartitionID[3]],err:<nil>
+data node [127.0.0.1:9104] create data partition,id[addr[127.0.0.1:9104]_op[96]_DataPartitionID[3]],err:<nil>
+data node [127.0.0.1:9103] create data partition,id[addr[127.0.0.1:9103]_op[96]_DataPartitionID[4]],err:<nil>
+data node [127.0.0.1:9105] create data partition,id[addr[127.0.0.1:9105]_op[96]_DataPartitionID[4]],err:<nil>
+data node [127.0.0.1:9106] create data partition,id[addr[127.0.0.1:9106]_op[96]_DataPartitionID[4]],err:<nil>
+data node [127.0.0.1:9103] create data partition,id[addr[127.0.0.1:9103]_op[96]_DataPartitionID[5]],err:<nil>
+data node [127.0.0.1:9104] create data partition,id[addr[127.0.0.1:9104]_op[96]_DataPartitionID[5]],err:<nil>
+data node [127.0.0.1:9106] create data partition,id[addr[127.0.0.1:9106]_op[96]_DataPartitionID[5]],err:<nil>
+data node [127.0.0.1:9103] create data partition,id[addr[127.0.0.1:9103]_op[96]_DataPartitionID[6]],err:<nil>
+data node [127.0.0.1:9104] create data partition,id[addr[127.0.0.1:9104]_op[96]_DataPartitionID[6]],err:<nil>
+data node [127.0.0.1:9105] create data partition,id[addr[127.0.0.1:9105]_op[96]_DataPartitionID[6]],err:<nil>
+data node [127.0.0.1:9105] create data partition,id[addr[127.0.0.1:9105]_op[96]_DataPartitionID[7]],err:<nil>
+data node [127.0.0.1:9103] create data partition,id[addr[127.0.0.1:9103]_op[96]_DataPartitionID[7]],err:<nil>
+data node [127.0.0.1:9106] create data partition,id[addr[127.0.0.1:9106]_op[96]_DataPartitionID[7]],err:<nil>
+data node [127.0.0.1:9105] create data partition,id[addr[127.0.0.1:9105]_op[96]_DataPartitionID[8]],err:<nil>
+data node [127.0.0.1:9106] create data partition,id[addr[127.0.0.1:9106]_op[96]_DataPartitionID[8]],err:<nil>
+data node [127.0.0.1:9104] create data partition,id[addr[127.0.0.1:9104]_op[96]_DataPartitionID[8]],err:<nil>
+data node [127.0.0.1:9103] create data partition,id[addr[127.0.0.1:9103]_op[96]_DataPartitionID[9]],err:<nil>
+data node [127.0.0.1:9104] create data partition,id[addr[127.0.0.1:9104]_op[96]_DataPartitionID[9]],err:<nil>
+data node [127.0.0.1:9105] create data partition,id[addr[127.0.0.1:9105]_op[96]_DataPartitionID[9]],err:<nil>
+data node [127.0.0.1:9104] create data partition,id[addr[127.0.0.1:9104]_op[96]_DataPartitionID[10]],err:<nil>
+data node [127.0.0.1:9103] create data partition,id[addr[127.0.0.1:9103]_op[96]_DataPartitionID[10]],err:<nil>
+data node [127.0.0.1:9106] create data partition,id[addr[127.0.0.1:9106]_op[96]_DataPartitionID[10]],err:<nil>
+vol[&{15 commonVol cfs zone2 3 3 0 0 3 0 300 10 3 10 false false false false false false 2023-08-04 20:19:40 false false false off 0 0 0 0    false false 0 0 0 0 0 0 0 0 0  0 [] 0}] has created
+user[cfs] has created
+=== RUN   TestBenchCarryWeightNodeSelector
+    node_selector_test.go:47: Data Node 0
+        	Total Space:102400 MB
+        	Avaliable Space:53939 MB
+        
+    node_selector_test.go:47: Data Node 1
+        	Total Space:204800 MB
+        	Avaliable Space:105708 MB
+        
+    node_selector_test.go:47: Data Node 2
+        	Total Space:307200 MB
+        	Avaliable Space:153998 MB
+        
+    node_selector_test.go:47: Data Node 3
+        	Total Space:409600 MB
+        	Avaliable Space:204080 MB
+        
+    node_selector_test.go:237: Node 3 select times 40
+        Node 2 select times 30
+        Node 1 select times 20
+        Node 0 select times 10
+        
+    node_selector_test.go:47: Data Node 3
+        	Total Space:409600 MB
+        	Avaliable Space:204080 MB
+        
+    node_selector_test.go:47: Data Node 0
+        	Total Space:102400 MB
+        	Avaliable Space:53939 MB
+        
+    node_selector_test.go:47: Data Node 1
+        	Total Space:204800 MB
+        	Avaliable Space:105708 MB
+        
+    node_selector_test.go:47: Data Node 2
+        	Total Space:307200 MB
+        	Avaliable Space:153998 MB
+        
+    node_selector_test.go:53: Meta Node 3
+        	Total Space:409600 MB
+        	Avaliable Space:204080 MB
+        
+    node_selector_test.go:53: Meta Node 0
+        	Total Space:102400 MB
+        	Avaliable Space:53939 MB
+        
+    node_selector_test.go:53: Meta Node 1
+        	Total Space:204800 MB
+        	Avaliable Space:105708 MB
+        
+    node_selector_test.go:53: Meta Node 2
+        	Total Space:307200 MB
+        	Avaliable Space:153998 MB
+        
+    node_selector_test.go:237: Node 3 select times 40
+        Node 2 select times 30
+        Node 1 select times 20
+        Node 0 select times 10
+        
+    node_selector_test.go:53: Meta Node 3
+        	Total Space:409600 MB
+        	Avaliable Space:204080 MB
+        
+    node_selector_test.go:53: Meta Node 0
+        	Total Space:102400 MB
+        	Avaliable Space:53939 MB
+        
+    node_selector_test.go:53: Meta Node 1
+        	Total Space:204800 MB
+        	Avaliable Space:105708 MB
+        
+    node_selector_test.go:53: Meta Node 2
+        	Total Space:307200 MB
+        	Avaliable Space:153998 MB
+        
+        
+--- PASS: TestBenchCarryWeightNodeSelector (0.00s)
+PASS
+ok  	github.com/cubefs/cubefs/master	16.061s
