@@ -380,3 +380,60 @@ func (s *RoundRobinNodeSelector) Select(ns *nodeSet, excludeHosts []string, repl
 ## 关于Nodeset策略
 
 Nodeset策略基本上是以上策略的以Nodeset为单位的版本，其中节点的资源总量被替换为nodeset的资源总量，节点的可用资源被替换为nodeset的可用资源。
+
+CarryWeight算法的Nodeset Selector做了一些修改，原因是拥有最大carry的不一定拥有足够的可用节点数量。
+
+步骤如下：
+* 将nodeset按carry排序。
+* 选择最大的可用nodeset。
+* 增加未被选择的nodeset的carry。
+
+### 将nodeset按carry排序
+
+```go
+	total := s.getMaxTotal(nsc)
+	// prepare weight of evert nodesets
+	s.prepareCarry(nsc, total)
+	// sort nodesets by weight
+	sort.Slice(nsc, func(i, j int) bool {
+		return s.carrys[nsc[i].ID] > s.carrys[nsc[j].ID]
+	})
+```
+
+### 选择最大的可用nodeset
+
+```go
+	// pick the first nodeset than has N writable node
+	for i := 0; i < nsc.Len(); i++ {
+		ns = nsc[i]
+		if ns.canWriteFor(s.nodeType, int(replicaNum)) && !containsID(excludeNodeSets, ns.ID) {
+			if i != 0 {
+				nsc[i], nsc[0] = nsc[0], nsc[i]
+			}
+			break
+		}
+	}
+	if ns != nil {
+		// deerase nodeset weight
+		s.carrys[ns.ID] -= 1.0
+		if s.carrys[ns.ID] < 0 {
+			s.carrys[ns.ID] = 0
+		}
+		return
+	}
+```
+
+### 增加未被选择的nodeset的carry
+
+```go
+	// increase weight of other nodesets
+	for i := 1; i < nsc.Len(); i++ {
+		nset := nsc[i]
+		weight := float64(nset.getTotalAvailableSpaceOf(s.nodeType)) / float64(total)
+		s.carrys[nset.ID] += weight
+		// limit the max value of weight
+		if s.carrys[nset.ID] > 10.0 {
+			s.carrys[nset.ID] = 10.0
+		}
+	}
+```
