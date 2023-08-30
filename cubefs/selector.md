@@ -7,3 +7,15 @@ CubeFS为用户提供了四种分配策略：
 * RoundRobin
 
 其中CarryWeight是Node分配的默认策略，RoundRobin是Nodeset分配的默认策略。
+
+## CarryWeight
+
+CarryWeight策略是所有策略之中最复杂的。
+
+
+
+## Ticket
+
+## AvailableSpaceFirst
+
+## RoundRobin
