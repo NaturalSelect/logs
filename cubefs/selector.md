@@ -150,6 +150,90 @@ func (s *CarryWeightNodeSelector) setNodeCarry(nodes SortedWeightedNodes, availC
 
 ## Ticket
 
+Ticket算法与操作系统的彩票调度算法相似。
+
+分成以下步骤：
+* 将节点按id排序。
+* 将节点的可用资源聚合在一起组成一条“总线”，并获取一个`[0,length]`的随机数，其中`length`是“总线”的长度。
+* 根据随机数落入的节点的区域，选择对应的节点。
+
+### 将节点按id排序
+
+```go
+	// sort nodes by id, so we can get a node list that is as stable as possible
+	sort.Slice(sortedNodes, func(i, j int) bool {
+		return sortedNodes[i].GetID() < sortedNodes[j].GetID()
+	})
+```
+
+### 获取彩票
+
+```go
+func (s *TicketNodeSelector) GetTicket(nodes []Node, excludeHosts []string, selectedHosts []string) uint64 {
+	total := uint64(0)
+	for i := 0; i != len(nodes); i++ {
+		if !canAllocPartition(nodes[i], s.nodeType) || contains(excludeHosts, nodes[i].GetAddr()) || contains(selectedHosts, nodes[i].GetAddr()) {
+			continue
+		}
+		switch s.nodeType {
+		case MetaNodeType:
+			n := nodes[i].(*MetaNode)
+			total += n.Total - n.Used
+		case DataNodeType:
+			n := nodes[i].(*DataNode)
+			total += n.AvailableSpace
+		default:
+			panic("unkown node type")
+		}
+	}
+	ticket := uint64(0)
+	if total != 0 {
+		ticket = s.random.Uint64() % total
+	}
+	return ticket
+}
+```
+
+### 选择节点
+
+```go
+	for len(orderHosts) != replicaNum {
+		ticket := s.GetTicket(sortedNodes, excludeHosts, orderHosts)
+		node := s.GetNodeByTicket(ticket, sortedNodes, excludeHosts, orderHosts)
+		if node == nil {
+			break
+		}
+		orderHosts = append(orderHosts, node.GetAddr())
+		node.SelectNodeForWrite()
+		peer := proto.Peer{ID: node.GetID(), Addr: node.GetAddr()}
+		peers = append(peers, peer)
+	}
+
+func (s *TicketNodeSelector) GetNodeByTicket(ticket uint64, nodes []Node, excludeHosts []string, selectedHosts []string) (node Node) {
+	total := uint64(0)
+	for i := 0; i != len(nodes); i++ {
+		if !canAllocPartition(nodes[i], s.nodeType) || contains(excludeHosts, nodes[i].GetAddr()) || contains(selectedHosts, nodes[i].GetAddr()) {
+			continue
+		}
+		switch s.nodeType {
+		case MetaNodeType:
+			n := nodes[i].(*MetaNode)
+			total += n.Total - n.Used
+		case DataNodeType:
+			n := nodes[i].(*DataNode)
+			total += n.AvailableSpace
+		default:
+			panic("unkown node type")
+		}
+		if ticket <= total {
+			node = nodes[i]
+			return
+		}
+	}
+	return
+}
+```
+
 ## AvailableSpaceFirst
 
 ## RoundRobin
