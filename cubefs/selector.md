@@ -381,7 +381,7 @@ func (s *RoundRobinNodeSelector) Select(ns *nodeSet, excludeHosts []string, repl
 
 Nodeset策略基本上是以上策略的以Nodeset为单位的版本，其中节点的资源总量被替换为nodeset的资源总量，节点的可用资源被替换为nodeset的可用资源。
 
-## Compare CarryWeight & Ticket Nodeset Selector
+## 比较CarryWeight和Ticket 分配策略（Nodeset）
 
 ```log
 === RUN   TestBenchmarkCarryWeightNodesetSelector
@@ -490,7 +490,7 @@ Nodeset策略基本上是以上策略的以Nodeset为单位的版本，其中节
 --- PASS: TestBenchmarkTicketNodesetSelector (0.01s)
 ```
 
-## Compare CarryWeight & Ticket Node Selector
+## 比较CarryWeight和Ticket 分配策略（Node）
 
 ```log
 === RUN   TestBenchTicketNodeSelector
