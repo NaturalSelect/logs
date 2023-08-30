@@ -1,10 +1,10 @@
 # CubeFS Nodeset/Node 分配策略
 
 CubeFS为用户提供了四种分配策略：
-* CarryWeight
-* Ticket
-* AvailableSpaceFirst
-* RoundRobin
+* CarryWeight - 使用权值算法进行分配（可用资源优先的均匀的分配算法）。
+* Ticket - 使用彩票算法进行分配（同上，但随机性比较强适用于节点数量进行变更的情况）。
+* AvailableSpaceFirst - 可用资源优先（可用资源优先的分配算法，只会选择可用资源最大的节点，可用资源倾斜严重的极端情况）。
+* RoundRobin - 轮询算法。
 
 其中CarryWeight是Node分配的默认策略，RoundRobin是Nodeset分配的默认策略。
 
