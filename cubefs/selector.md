@@ -236,4 +236,123 @@ func (s *TicketNodeSelector) GetNodeByTicket(ticket uint64, nodes []Node, exclud
 
 ## AvailableSpaceFirst
 
+AvailableSpaceFirst算法适用于节点可用资源倾斜严重的情况。
+
+它只会选择可用资源最大的几个节点。
+
+步骤如下：
+* 按节点可用资源排序。
+* 选择前几个节点。
+
+### 按节点可用资源排序
+
+```go
+	// sort nodes by available space
+	sort.Slice(sortedNodes, func(i, j int) bool {
+		return s.getNodeAvailableSpace(sortedNodes[i]) > s.getNodeAvailableSpace(sortedNodes[j])
+	})
+```
+
+### 选择前几个节点
+
+```go
+	// pick first N nodes
+	for i := 0; i < replicaNum && nodeIndex < len(sortedNodes); i++ {
+		selectedIndex := len(sortedNodes)
+		// loop until we get a writable node
+		for nodeIndex < len(sortedNodes) {
+			node := sortedNodes[nodeIndex]
+			nodeIndex += 1
+			if canAllocPartition(node, s.nodeType) {
+				if excludeHosts == nil || !contains(excludeHosts, node.GetAddr()) {
+					selectedIndex = nodeIndex - 1
+					break
+				}
+			}
+		}
+		// if we get a writable node, append it to host list
+		if selectedIndex != len(sortedNodes) {
+			node := sortedNodes[selectedIndex]
+			node.SelectNodeForWrite()
+			orderHosts = append(orderHosts, node.GetAddr())
+			peer := proto.Peer{ID: node.GetID(), Addr: node.GetAddr()}
+			peers = append(peers, peer)
+		}
+	}
+```
+
 ## RoundRobin
+
+按轮询算法进行节点选择。
+
+步骤如下：
+* 维护一个选择指针`index`，并初始化为0。
+* 将节点按id排序。
+* 选择`index`后的几个节点，并将`index`前推。
+
+```go
+func (s *RoundRobinNodeSelector) Select(ns *nodeSet, excludeHosts []string, replicaNum int) (newHosts []string, peers []proto.Peer, err error) {
+	newHosts = make([]string, 0)
+	peers = make([]proto.Peer, 0)
+	// if replica == 0, return
+	if replicaNum == 0 {
+		return
+	}
+	orderHosts := make([]string, 0)
+	nodes := ns.getNodes(s.nodeType)
+	sortedNodes := make([]Node, 0)
+	nodes.Range(func(key, value interface{}) bool {
+		sortedNodes = append(sortedNodes, asNodeWrap(value, s.nodeType))
+		return true
+	})
+	// if we cannot get enough nodes, return error
+	if len(sortedNodes) < replicaNum {
+		err = fmt.Errorf("action[%vNodeSelector::Select] no enough writable hosts,replicaNum:%v  MatchNodeCount:%v  ",
+			s.GetName(), replicaNum, len(sortedNodes))
+		return
+	}
+	// sort nodes by id, so we can get a node list that is as stable as possible
+	sort.Slice(sortedNodes, func(i, j int) bool {
+		return sortedNodes[i].GetID() < sortedNodes[j].GetID()
+	})
+	nodeIndex := 0
+	// pick first N nodes
+	for i := 0; i < replicaNum && nodeIndex < len(sortedNodes); i++ {
+		selectedIndex := len(sortedNodes)
+		// loop until we get a writable node
+		for nodeIndex < len(sortedNodes) {
+			node := sortedNodes[(nodeIndex+s.index)%len(sortedNodes)]
+			nodeIndex += 1
+			if canAllocPartition(node, s.nodeType) {
+				if excludeHosts == nil || !contains(excludeHosts, node.GetAddr()) {
+					selectedIndex = nodeIndex - 1
+					break
+				}
+			}
+		}
+		// if we get a writable node, append it to host list
+		if selectedIndex != len(sortedNodes) {
+			node := sortedNodes[(selectedIndex+s.index)%len(sortedNodes)]
+			orderHosts = append(orderHosts, node.GetAddr())
+			node.SelectNodeForWrite()
+			peer := proto.Peer{ID: node.GetID(), Addr: node.GetAddr()}
+			peers = append(peers, peer)
+		}
+	}
+	// if we cannot get enough writable nodes, return error
+	if len(orderHosts) < replicaNum {
+		err = fmt.Errorf("action[%vNodeSelector::Select] no enough writable hosts,replicaNum:%v  MatchNodeCount:%v  ",
+			s.GetName(), replicaNum, len(orderHosts))
+		return
+	}
+	// move the index of selector
+	s.index += nodeIndex
+	log.LogInfof("action[%vNodeSelector::Select] peers[%v]", s.GetName(), peers)
+	// reshuffle for primary-backup replication
+	if newHosts, err = reshuffleHosts(orderHosts); err != nil {
+		err = fmt.Errorf("action[%vNodeSelector::Select] err:%v  orderHosts is nil", s.GetName(), err.Error())
+		return
+	}
+	return
+}
+```
