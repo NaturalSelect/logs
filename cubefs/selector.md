@@ -381,7 +381,7 @@ func (s *RoundRobinNodeSelector) Select(ns *nodeSet, excludeHosts []string, repl
 
 Nodeset策略基本上是以上策略的以Nodeset为单位的版本，其中节点的资源总量被替换为nodeset的资源总量，节点的可用资源被替换为nodeset的可用资源。
 
-CarryWeight算法的Nodeset Selector做了一些修改，原因是拥有最大carry的不一定拥有足够的可用节点数量。
+CarryWeight算法的Nodeset Selector做了一些修改，资源总量小的nodeset更容易被选中。
 
 步骤如下：
 * 将nodeset按carry排序。
