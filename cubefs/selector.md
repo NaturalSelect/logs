@@ -54,6 +54,7 @@ func (s *CarryWeightNodeSelector) getTotalMaxForDataNodes(nodes *sync.Map) (tota
 计算公式为 $\frac{Available}{MaxTotal}$，其中`Available`为节点的可用资源。
 
 ```go
+
 total := s.getTotalMax(nodes)
 // prepare carry for every nodes
 s.prepareCarry(nodes, total)
@@ -91,7 +92,7 @@ func (s *CarryWeightNodeSelector) prepareCarryForDataNodes(nodes *sync.Map, tota
 由此可得，资源大的节点增长的快，资源小的节点增长的慢，一旦获得足够的carry nodes就停止增长。
 
 ```go
-  // if we cannot get enough writable nodes, return error
+  	// if we cannot get enough writable nodes, return error
 	weightedNodes, count := s.getCarryNodes(ns, total, excludeHosts)
 	if len(weightedNodes) < replicaNum {
 		err = fmt.Errorf("action[%vNodeSelector::Select] no enough writable hosts,replicaNum:%v  MatchNodeCount:%v  ",
@@ -128,7 +129,7 @@ func (s *CarryWeightNodeSelector) setNodeCarry(nodes SortedWeightedNodes, availC
 ### 将节点按carry 排序，选择其中最大的几个。
 
 ```go
-  // sort nodes by weight
+  	// sort nodes by weight
 	sort.Sort(weightedNodes)
 	// pick first N nodes
 	for i := 0; i < replicaNum; i++ {
