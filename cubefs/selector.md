@@ -381,176 +381,113 @@ func (s *RoundRobinNodeSelector) Select(ns *nodeSet, excludeHosts []string, repl
 
 Nodeset策略基本上是以上策略的以Nodeset为单位的版本，其中节点的资源总量被替换为nodeset的资源总量，节点的可用资源被替换为nodeset的可用资源。
 
-<!--
-
-CarryWeight算法的Nodeset Selector做了一些修改，资源总量小的nodeset相对原来的容易被选中。
-
-在Nodeset维度上，考虑可用资源的差距可能不如分散负载重要。
-
-步骤如下：
-* 将nodeset按carry排序。
-* 选择最大的可用nodeset。
-* 增加未被选择的nodeset的carry。
-
-### 将nodeset按carry排序
-
-```go
-	total := s.getMaxTotal(nsc)
-	// prepare weight of evert nodesets
-	s.prepareCarry(nsc, total)
-	// sort nodesets by weight
-	sort.Slice(nsc, func(i, j int) bool {
-		return s.carrys[nsc[i].ID] > s.carrys[nsc[j].ID]
-	})
-```
-
-### 选择最大的可用nodeset
-
-```go
-	// pick the first nodeset than has N writable node
-	for i := 0; i < nsc.Len(); i++ {
-		ns = nsc[i]
-		if ns.canWriteFor(s.nodeType, int(replicaNum)) && !containsID(excludeNodeSets, ns.ID) {
-			if i != 0 {
-				nsc[i], nsc[0] = nsc[0], nsc[i]
-			}
-			break
-		}
-	}
-	if ns != nil {
-		// deerase nodeset weight
-		s.carrys[ns.ID] -= 1.0
-		if s.carrys[ns.ID] < 0 {
-			s.carrys[ns.ID] = 0
-		}
-		return
-	}
-```
-
-### 增加未被选择的nodeset的carry
-
-```go
-	// increase weight of other nodesets
-	for i := 1; i < nsc.Len(); i++ {
-		nset := nsc[i]
-		weight := float64(nset.getTotalAvailableSpaceOf(s.nodeType)) / float64(total)
-		s.carrys[nset.ID] += weight
-		// limit the max value of weight
-		if s.carrys[nset.ID] > 10.0 {
-			s.carrys[nset.ID] = 10.0
-		}
-	}
-```
-
--->
-
 ## Compare CarryWeight & Ticket Nodeset Selector
 
 ```log
 === RUN   TestBenchmarkCarryWeightNodesetSelector
     nodeset_selector_test.go:170: CarryWeight Nodeset Select times:
-    nodeset_selector_test.go:142: Nodeset 3 select 31 times
-    nodeset_selector_test.go:142: Nodeset 2 select 20 times
-    nodeset_selector_test.go:142: Nodeset 1 select 11 times
-    nodeset_selector_test.go:142: Nodeset 4 select 38 times
-    nodeset_selector_test.go:46: Nodeset 4
-        	Total Data Space:400 GB
+    nodeset_selector_test.go:142: Nodeset 1 select 10 times
+    nodeset_selector_test.go:142: Nodeset 4 select 39 times
+    nodeset_selector_test.go:142: Nodeset 3 select 30 times
+    nodeset_selector_test.go:142: Nodeset 2 select 21 times
+    nodeset_selector_test.go:46: Nodeset 1
+        	Total Data Space:100 GB
         	Total Meta Space:0 GB
-        	Total Data Available Space:206 GB
+        	Total Data Available Space:46 GB
         	Total Meta Available Space:0 GB
     nodeset_selector_test.go:46: Nodeset 2
         	Total Data Space:200 GB
         	Total Meta Space:0 GB
-        	Total Data Available Space:88 GB
+        	Total Data Available Space:117 GB
         	Total Meta Available Space:0 GB
     nodeset_selector_test.go:46: Nodeset 3
         	Total Data Space:300 GB
         	Total Meta Space:0 GB
-        	Total Data Available Space:153 GB
+        	Total Data Available Space:156 GB
         	Total Meta Available Space:0 GB
-    nodeset_selector_test.go:46: Nodeset 1
-        	Total Data Space:100 GB
+    nodeset_selector_test.go:46: Nodeset 4
+        	Total Data Space:400 GB
         	Total Meta Space:0 GB
-        	Total Data Available Space:56 GB
+        	Total Data Available Space:180 GB
         	Total Meta Available Space:0 GB
     nodeset_selector_test.go:202: CarryWeight Nodeset Select times:
-    nodeset_selector_test.go:142: Nodeset 4 select 38 times
-    nodeset_selector_test.go:142: Nodeset 3 select 31 times
-    nodeset_selector_test.go:142: Nodeset 2 select 20 times
-    nodeset_selector_test.go:142: Nodeset 1 select 11 times
-    nodeset_selector_test.go:46: Nodeset 4
-        	Total Data Space:0 GB
-        	Total Meta Space:400 GB
-        	Total Data Available Space:0 GB
-        	Total Meta Available Space:206 GB
-    nodeset_selector_test.go:46: Nodeset 2
-        	Total Data Space:0 GB
-        	Total Meta Space:200 GB
-        	Total Data Available Space:0 GB
-        	Total Meta Available Space:88 GB
-    nodeset_selector_test.go:46: Nodeset 3
-        	Total Data Space:0 GB
-        	Total Meta Space:300 GB
-        	Total Data Available Space:0 GB
-        	Total Meta Available Space:153 GB
+    nodeset_selector_test.go:142: Nodeset 4 select 39 times
+    nodeset_selector_test.go:142: Nodeset 3 select 30 times
+    nodeset_selector_test.go:142: Nodeset 2 select 21 times
+    nodeset_selector_test.go:142: Nodeset 1 select 10 times
     nodeset_selector_test.go:46: Nodeset 1
         	Total Data Space:0 GB
         	Total Meta Space:100 GB
         	Total Data Available Space:0 GB
-        	Total Meta Available Space:56 GB
---- PASS: TestBenchmarkCarryWeightNodesetSelector (0.00s)
+        	Total Meta Available Space:46 GB
+    nodeset_selector_test.go:46: Nodeset 2
+        	Total Data Space:0 GB
+        	Total Meta Space:200 GB
+        	Total Data Available Space:0 GB
+        	Total Meta Available Space:117 GB
+    nodeset_selector_test.go:46: Nodeset 3
+        	Total Data Space:0 GB
+        	Total Meta Space:300 GB
+        	Total Data Available Space:0 GB
+        	Total Meta Available Space:156 GB
+    nodeset_selector_test.go:46: Nodeset 4
+        	Total Data Space:0 GB
+        	Total Meta Space:400 GB
+        	Total Data Available Space:0 GB
+        	Total Meta Available Space:180 GB
+--- PASS: TestBenchmarkCarryWeightNodesetSelector (0.01s)
 === RUN   TestBenchmarkTicketNodesetSelector
     nodeset_selector_test.go:170: Ticket Nodeset Select times:
-    nodeset_selector_test.go:142: Nodeset 3 select 33 times
-    nodeset_selector_test.go:142: Nodeset 2 select 19 times
-    nodeset_selector_test.go:142: Nodeset 4 select 42 times
-    nodeset_selector_test.go:142: Nodeset 1 select 6 times
+    nodeset_selector_test.go:142: Nodeset 4 select 47 times
+    nodeset_selector_test.go:142: Nodeset 3 select 30 times
+    nodeset_selector_test.go:142: Nodeset 1 select 7 times
+    nodeset_selector_test.go:142: Nodeset 2 select 16 times
     nodeset_selector_test.go:46: Nodeset 1
         	Total Data Space:100 GB
         	Total Meta Space:0 GB
-        	Total Data Available Space:68 GB
+        	Total Data Available Space:57 GB
         	Total Meta Available Space:0 GB
     nodeset_selector_test.go:46: Nodeset 2
         	Total Data Space:200 GB
         	Total Meta Space:0 GB
-        	Total Data Available Space:99 GB
+        	Total Data Available Space:113 GB
         	Total Meta Available Space:0 GB
     nodeset_selector_test.go:46: Nodeset 3
         	Total Data Space:300 GB
         	Total Meta Space:0 GB
-        	Total Data Available Space:134 GB
+        	Total Data Available Space:148 GB
         	Total Meta Available Space:0 GB
     nodeset_selector_test.go:46: Nodeset 4
         	Total Data Space:400 GB
         	Total Meta Space:0 GB
-        	Total Data Available Space:203 GB
+        	Total Data Available Space:181 GB
         	Total Meta Available Space:0 GB
     nodeset_selector_test.go:202: Ticket Nodeset Select times:
-    nodeset_selector_test.go:142: Nodeset 4 select 42 times
-    nodeset_selector_test.go:142: Nodeset 1 select 6 times
-    nodeset_selector_test.go:142: Nodeset 3 select 33 times
-    nodeset_selector_test.go:142: Nodeset 2 select 19 times
+    nodeset_selector_test.go:142: Nodeset 4 select 47 times
+    nodeset_selector_test.go:142: Nodeset 3 select 30 times
+    nodeset_selector_test.go:142: Nodeset 1 select 7 times
+    nodeset_selector_test.go:142: Nodeset 2 select 16 times
     nodeset_selector_test.go:46: Nodeset 1
         	Total Data Space:0 GB
         	Total Meta Space:100 GB
         	Total Data Available Space:0 GB
-        	Total Meta Available Space:68 GB
+        	Total Meta Available Space:57 GB
     nodeset_selector_test.go:46: Nodeset 2
         	Total Data Space:0 GB
         	Total Meta Space:200 GB
         	Total Data Available Space:0 GB
-        	Total Meta Available Space:99 GB
+        	Total Meta Available Space:113 GB
     nodeset_selector_test.go:46: Nodeset 3
         	Total Data Space:0 GB
         	Total Meta Space:300 GB
         	Total Data Available Space:0 GB
-        	Total Meta Available Space:134 GB
+        	Total Meta Available Space:148 GB
     nodeset_selector_test.go:46: Nodeset 4
         	Total Data Space:0 GB
         	Total Meta Space:400 GB
         	Total Data Available Space:0 GB
-        	Total Meta Available Space:203 GB
---- PASS: TestBenchmarkTicketNodesetSelector (0.00s)
+        	Total Meta Available Space:181 GB
+--- PASS: TestBenchmarkTicketNodesetSelector (0.01s)
 ```
 
 ## Compare CarryWeight & Ticket Node Selector
