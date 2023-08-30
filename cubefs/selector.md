@@ -17,6 +17,7 @@ CarryWeight策略是所有策略之中最复杂的。
 * 初始化节点的carry。
 * 获得足够的carry nodes。
 * 将节点按carry 排序，选择其中最大的几个。
+* 减少被选择的node的carry。
 
 ### 计算`max total`
 
@@ -146,6 +147,25 @@ func (s *CarryWeightNodeSelector) setNodeCarry(nodes SortedWeightedNodes, availC
 		return
 	}
 	return
+```
+
+### 减少被选择的node的carry
+
+```go
+	// pick first N nodes
+	for i := 0; i < replicaNum; i++ {
+		node := weightedNodes[i].Ptr
+		s.selectNodeForWrite(node)
+		orderHosts = append(orderHosts, node.GetAddr())
+		peer := proto.Peer{ID: node.GetID(), Addr: node.GetAddr()}
+		peers = append(peers, peer)
+	}
+
+func (s *CarryWeightNodeSelector) selectNodeForWrite(node Node) {
+	node.SelectNodeForWrite()
+	// decrease node weight
+	s.carry[node.GetID()] -= 1.0
+}
 ```
 
 ## Ticket
