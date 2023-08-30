@@ -437,3 +437,205 @@ CarryWeight算法的Nodeset Selector做了一些修改，资源总量小的nodes
 		}
 	}
 ```
+
+## Compare CarryWeight & Ticket Nodeset Selector
+
+```log
+=== RUN   TestBenchmarkCarryWeightNodesetSelector
+    nodeset_selector_test.go:170: CarryWeight Nodeset Select times:
+    nodeset_selector_test.go:142: Nodeset 4 select 35 times
+    nodeset_selector_test.go:142: Nodeset 3 select 30 times
+    nodeset_selector_test.go:142: Nodeset 2 select 25 times
+    nodeset_selector_test.go:142: Nodeset 1 select 10 times
+    nodeset_selector_test.go:46: Nodeset 2
+        	Total Data Space:200 GB
+        	Total Meta Space:0 GB
+        	Total Data Available Space:186 GB
+        	Total Meta Available Space:0 GB
+    nodeset_selector_test.go:46: Nodeset 3
+        	Total Data Space:300 GB
+        	Total Meta Space:0 GB
+        	Total Data Available Space:286 GB
+        	Total Meta Available Space:0 GB
+    nodeset_selector_test.go:46: Nodeset 1
+        	Total Data Space:100 GB
+        	Total Meta Space:0 GB
+        	Total Data Available Space:93 GB
+        	Total Meta Available Space:0 GB
+    nodeset_selector_test.go:46: Nodeset 4
+        	Total Data Space:400 GB
+        	Total Meta Space:0 GB
+        	Total Data Available Space:382 GB
+        	Total Meta Available Space:0 GB
+    nodeset_selector_test.go:202: CarryWeight Nodeset Select times:
+    nodeset_selector_test.go:142: Nodeset 4 select 35 times
+    nodeset_selector_test.go:142: Nodeset 3 select 30 times
+    nodeset_selector_test.go:142: Nodeset 2 select 25 times
+    nodeset_selector_test.go:142: Nodeset 1 select 10 times
+    nodeset_selector_test.go:46: Nodeset 2
+        	Total Data Space:0 GB
+        	Total Meta Space:200 GB
+        	Total Data Available Space:0 GB
+        	Total Meta Available Space:186 GB
+    nodeset_selector_test.go:46: Nodeset 3
+        	Total Data Space:0 GB
+        	Total Meta Space:300 GB
+        	Total Data Available Space:0 GB
+        	Total Meta Available Space:286 GB
+    nodeset_selector_test.go:46: Nodeset 1
+        	Total Data Space:0 GB
+        	Total Meta Space:100 GB
+        	Total Data Available Space:0 GB
+        	Total Meta Available Space:93 GB
+    nodeset_selector_test.go:46: Nodeset 4
+        	Total Data Space:0 GB
+        	Total Meta Space:400 GB
+        	Total Data Available Space:0 GB
+        	Total Meta Available Space:382 GB
+--- PASS: TestBenchmarkCarryWeightNodesetSelector (0.00s)
+=== RUN   TestBenchmarkTicketNodesetSelector
+    nodeset_selector_test.go:170: Ticket Nodeset Select times:
+    nodeset_selector_test.go:142: Nodeset 3 select 18 times
+    nodeset_selector_test.go:142: Nodeset 1 select 7 times
+    nodeset_selector_test.go:142: Nodeset 4 select 48 times
+    nodeset_selector_test.go:142: Nodeset 2 select 27 times
+    nodeset_selector_test.go:46: Nodeset 1
+        	Total Data Space:100 GB
+        	Total Meta Space:0 GB
+        	Total Data Available Space:97 GB
+        	Total Meta Available Space:0 GB
+    nodeset_selector_test.go:46: Nodeset 2
+        	Total Data Space:200 GB
+        	Total Meta Space:0 GB
+        	Total Data Available Space:184 GB
+        	Total Meta Available Space:0 GB
+    nodeset_selector_test.go:46: Nodeset 3
+        	Total Data Space:300 GB
+        	Total Meta Space:0 GB
+        	Total Data Available Space:289 GB
+        	Total Meta Available Space:0 GB
+    nodeset_selector_test.go:46: Nodeset 4
+        	Total Data Space:400 GB
+        	Total Meta Space:0 GB
+        	Total Data Available Space:378 GB
+        	Total Meta Available Space:0 GB
+    nodeset_selector_test.go:202: Ticket Nodeset Select times:
+    nodeset_selector_test.go:142: Nodeset 4 select 48 times
+    nodeset_selector_test.go:142: Nodeset 2 select 27 times
+    nodeset_selector_test.go:142: Nodeset 3 select 18 times
+    nodeset_selector_test.go:142: Nodeset 1 select 7 times
+    nodeset_selector_test.go:46: Nodeset 1
+        	Total Data Space:0 GB
+        	Total Meta Space:100 GB
+        	Total Data Available Space:0 GB
+        	Total Meta Available Space:97 GB
+    nodeset_selector_test.go:46: Nodeset 2
+        	Total Data Space:0 GB
+        	Total Meta Space:200 GB
+        	Total Data Available Space:0 GB
+        	Total Meta Available Space:184 GB
+    nodeset_selector_test.go:46: Nodeset 3
+        	Total Data Space:0 GB
+        	Total Meta Space:300 GB
+        	Total Data Available Space:0 GB
+        	Total Meta Available Space:289 GB
+    nodeset_selector_test.go:46: Nodeset 4
+        	Total Data Space:0 GB
+        	Total Meta Space:400 GB
+        	Total Data Available Space:0 GB
+        	Total Meta Available Space:378 GB
+--- PASS: TestBenchmarkTicketNodesetSelector (0.00s)
+```
+
+## Compare CarryWeight & Ticket Node Selector
+
+```log
+=== RUN   TestBenchTicketNodeSelector
+    node_selector_test.go:237: Node 1 select times 23
+        Node 2 select times 33
+        Node 3 select times 34
+        Node 0 select times 10
+        
+    node_selector_test.go:47: Data Node 0
+        	Total Space:102400 MB
+        	Avaliable Space:50686 MB
+        
+    node_selector_test.go:47: Data Node 1
+        	Total Space:204800 MB
+        	Avaliable Space:86914 MB
+        
+    node_selector_test.go:47: Data Node 2
+        	Total Space:307200 MB
+        	Avaliable Space:132137 MB
+        
+    node_selector_test.go:47: Data Node 3
+        	Total Space:409600 MB
+        	Avaliable Space:244367 MB
+        
+    node_selector_test.go:237: Node 2 select times 33
+        Node 3 select times 34
+        Node 0 select times 10
+        Node 1 select times 23
+        
+    node_selector_test.go:53: Meta Node 0
+        	Total Space:102400 MB
+        	Avaliable Space:50686 MB
+        
+    node_selector_test.go:53: Meta Node 1
+        	Total Space:204800 MB
+        	Avaliable Space:86914 MB
+        
+    node_selector_test.go:53: Meta Node 2
+        	Total Space:307200 MB
+        	Avaliable Space:132137 MB
+        
+    node_selector_test.go:53: Meta Node 3
+        	Total Space:409600 MB
+        	Avaliable Space:244367 MB
+        
+--- PASS: TestBenchTicketNodeSelector (0.00s)
+=== RUN   TestBenchCarryWeightNodeSelector
+    node_selector_test.go:237: Node 0 select times 11
+        Node 3 select times 38
+        Node 2 select times 29
+        Node 1 select times 22
+        
+    node_selector_test.go:47: Data Node 0
+        	Total Space:102400 MB
+        	Avaliable Space:57746 MB
+        
+    node_selector_test.go:47: Data Node 1
+        	Total Space:204800 MB
+        	Avaliable Space:124706 MB
+        
+    node_selector_test.go:47: Data Node 2
+        	Total Space:307200 MB
+        	Avaliable Space:152358 MB
+        
+    node_selector_test.go:47: Data Node 3
+        	Total Space:409600 MB
+        	Avaliable Space:179293 MB
+        
+    node_selector_test.go:237: Node 3 select times 38
+        Node 2 select times 29
+        Node 1 select times 22
+        Node 0 select times 11
+        
+    node_selector_test.go:53: Meta Node 0
+        	Total Space:102400 MB
+        	Avaliable Space:57746 MB
+        
+    node_selector_test.go:53: Meta Node 1
+        	Total Space:204800 MB
+        	Avaliable Space:124706 MB
+        
+    node_selector_test.go:53: Meta Node 2
+        	Total Space:307200 MB
+        	Avaliable Space:152358 MB
+        
+    node_selector_test.go:53: Meta Node 3
+        	Total Space:409600 MB
+        	Avaliable Space:179293 MB
+        
+--- PASS: TestBenchCarryWeightNodeSelector (0.00s)
+```
