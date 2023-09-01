@@ -33,9 +33,81 @@
 
 * 创建测试用卷 `forbiddenVol`。
 * 向Master发起请求禁用卷`forbiddenVol`。
-* 等待所有`MockDataServer`的想关`MockDataPartition`的`Forbidden`被设置为`true`（超时300s）。
-* 等待所有`MockMetaServer`的想关`MockMetaPartition`的`Forbidden`被设置为`true`（超时300s）。
+* 等待所有`MockDataServer`的想关`MockDataPartition`的`Forbidden`被设置为`true`（超时60s）。
+* 等待所有`MockMetaServer`的想关`MockMetaPartition`的`Forbidden`被设置为`true`（超时60s）。
 * 向Master发起请求解除卷`forbiddenVol`的禁用状态。
-* 等待所有`MockDataServer`的想关`MockDataPartition`的`Forbidden`被设置为`false`（超时300s）。
-* 等待所有`MockMetaServer`的想关`MockMetaPartition`的`Forbidden`被设置为`false`（超时300s）。
+* 等待所有`MockDataServer`的想关`MockDataPartition`的`Forbidden`被设置为`false`（超时60s）。
+* 等待所有`MockMetaServer`的想关`MockMetaPartition`的`Forbidden`被设置为`false`（超时60s）。
 * 删除测试用卷 `forbiddenVol`。
+
+### 相关代码
+
+```go
+const forbidVolCheckTimeout = 60
+
+func checkVolForbidden(name string, forbidden bool) (success bool) {
+	for i := 0; i < forbidVolCheckTimeout; i++ {
+		okCount := 0
+		count, _ := rangeMockDataServers(func(mds *mocktest.MockDataServer) bool {
+			if mds.CheckVolPartition(name, forbidden) {
+				okCount += 1
+			}
+			return true
+		})
+		if count == okCount {
+			success = true
+			break
+		}
+		time.Sleep(1 * time.Second)
+	}
+	if !success {
+		return
+	}
+	success = false
+	for i := 0; i < forbidVolCheckTimeout; i++ {
+		okCount := 0
+		count, _ := rangeMockMetaServers(func(mms *mocktest.MockMetaServer) bool {
+			if mms.CheckVolPartition(name, forbidden) {
+				okCount += 1
+			}
+			return true
+		})
+		if count == okCount {
+			success = true
+			break
+		}
+		time.Sleep(1 * time.Second)
+	}
+	return
+}
+
+func TestForbiddenVolume(t *testing.T) {
+	name := "forbiddenVol"
+	createVol(map[string]interface{}{nameKey: name}, t)
+	vol, err := server.cluster.getVol(name)
+	if err != nil {
+		t.Errorf("failed to get vol %v, err %v", name, err)
+		return
+	}
+	defer func() {
+		reqURL := fmt.Sprintf("%v%v?name=%v&authKey=%v", hostAddr, proto.AdminDeleteVol, name, buildAuthKey(testOwner))
+		process(reqURL, t)
+	}()
+	reqUrl := fmt.Sprintf("%v%v", hostAddr, proto.AdminVolForbidden)
+	forbidUrl := fmt.Sprintf("%v?name=%v&%v=true", reqUrl, vol.Name, forbiddenKey)
+	unforbidUrl := fmt.Sprintf("%v?name=%v&%v=false", reqUrl, vol.Name, forbiddenKey)
+	process(forbidUrl, t)
+	ok := checkVolForbidden(vol.Name, vol.Forbidden)
+	if !ok {
+		t.Errorf("failed to forbid volume, check timeout")
+		return
+	}
+	process(unforbidUrl, t)
+	ok = checkVolForbidden(vol.Name, vol.Forbidden)
+	if !ok {
+		t.Errorf("failed to unforbid volume, check timeout")
+		return
+	}
+}
+
+```
