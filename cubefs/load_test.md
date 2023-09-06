@@ -28,3 +28,17 @@
 其中`TestCpuUtil`和`TestMemoryUsed`将检测当前CPU和内存的使用率，并打印。
 
 `TestGetPartition`、`TestGetIoCounter`和`TestMultiSample`将获取根目标（/）的磁盘IO数据，并打印。
+
+## 使用方法
+
+**DataNode:**
+
+```log
+$ cfs-cli datanode info
+```
+
+**MetaNode:**
+
+```log
+$ cfs-cli metanode info
+```
