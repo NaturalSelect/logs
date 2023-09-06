@@ -170,3 +170,77 @@
 在正常情况下：
 * `CarryWeight`的结果呈现出明显的阶梯状。
 * `Ticket`的结果也呈现出阶梯状，但是随机性更大。
+
+## 使用方法
+
+**Zone：**
+
+设置：
+
+```log
+$ cfs-cli zone update [NAME] [flags]
+
+Flags:
+      --dataNodeSelector string      Set the node select policy(datanode) for specify zone
+      --dataNodesetSelector string   Set the nodeset select policy(datanode) for specify zone
+      --enable                       Enable of disable specify zone (default true)
+  -h, --help                         help for update
+      --metaNodeSelector string      Set the node select policy(metanode) for specify zone
+      --metaNodesetSelector string   Set the nodeset select policy(metanode) for specify zone
+```
+
+查询：
+
+```log
+$ cfs-cli zone info [NAME]
+```
+
+**Nodeset:**
+
+设置：
+
+```log
+$ cfs-cli nodeset update [ID] [flags]
+
+Usage:
+  cfs-cli nodeset update [flags]
+
+Flags:
+      --dataNodeSelector string   Set the node select policy(datanode) for specify nodeset
+  -h, --help                      help for update
+      --metaNodeSelector string   Set the node select policy(metanode) for specify nodeset
+```
+
+查询：
+```log
+$ cfs-cli nodeset info [ID]
+
+Usage:
+  cfs-cli cluster set [flags]
+
+Flags:
+      --autoRepairRate string        DataNode auto repair rate
+      --batchCount string            MetaNode delete batch count
+      --clientIDKey string           needed if cluster authentication is on
+      --dataNodeSelector string      Set the node select policy(datanode) for cluster
+      --dataNodesetSelector string   Set the nodeset select policy(datanode) for cluster
+      --deleteWorkerSleepMs string   MetaNode delete worker sleep time with millisecond. if 0 for no sleep
+  -h, --help                         help for set
+      --loadFactor string            Load Factor
+      --markDeleteRate string        DataNode batch mark delete limit rate. if 0 for no infinity limit
+      --maxDpCntLimit string         Maximum number of dp on each datanode, default 3000, 0 represents setting to default
+      --metaNodeSelector string      Set the node select policy(metanode) for cluster
+      --metaNodesetSelector string   Set the nodeset select policy(metanode) for cluster
+```
+
+**Cluster:**
+
+设置：
+```log
+
+```
+
+查询：
+```log
+$ cfs-cli cluster info
+```
