@@ -111,3 +111,9 @@ func TestForbiddenVolume(t *testing.T) {
 }
 
 ```
+
+## 使用方法
+
+```log
+$ cfs-cli volume set-forbidden [VOLUME] [TRUE/FALSE]
+```
