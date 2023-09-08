@@ -237,10 +237,20 @@ Flags:
 
 设置：
 ```log
+Usage:
+  cfs-cli cluster set [flags]
 
-```
-
-查询：
-```log
-$ cfs-cli cluster info
+Flags:
+      --autoRepairRate string        DataNode auto repair rate
+      --batchCount string            MetaNode delete batch count
+      --clientIDKey string           needed if cluster authentication is on
+      --dataNodeSelector string      Set the node select policy(datanode) for cluster
+      --dataNodesetSelector string   Set the nodeset select policy(datanode) for cluster
+      --deleteWorkerSleepMs string   MetaNode delete worker sleep time with millisecond. if 0 for no sleep
+  -h, --help                         help for set
+      --loadFactor string            Load Factor
+      --markDeleteRate string        DataNode batch mark delete limit rate. if 0 for no infinity limit
+      --maxDpCntLimit string         Maximum number of dp on each datanode, default 3000, 0 represents setting to default
+      --metaNodeSelector string      Set the node select policy(metanode) for cluster
+      --metaNodesetSelector string   Set the nodeset select policy(metanode) for cluster
 ```
