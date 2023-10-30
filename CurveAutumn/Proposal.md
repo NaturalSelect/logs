@@ -10,7 +10,7 @@
     * 设置 `Pause`。
     * 排空ApplyQueue。
     * 将 `AppliedIndex` 设置为 `index - 1`。
-    * 启动定时器，轮询空闲空间直到大于阈值。
+    * 启动定时器，轮询空闲空间直到大于阈值，设置`Pause`为`false`。
 
 **Propose侧：**
 Leader在收到Request时，检查`Pause`：
