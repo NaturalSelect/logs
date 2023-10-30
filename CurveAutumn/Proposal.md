@@ -139,3 +139,11 @@ void WriteChunkRequest::OnApplyFromLog(std::shared_ptr<CSDataStore> datastore,
     }
 }
 ```
+
+```cpp
+void CopysetNode::on_error(const ::braft::Error &e) {
+    LOG(FATAL) << "Copyset: " << GroupIdString()
+               << ", peer id: " << peerId_.to_string()
+               << " meet raft error: " << e;
+}
+```
