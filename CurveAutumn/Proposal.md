@@ -1,3 +1,7 @@
+# Cluster Read-only
+
+主要思路：
+1. 在apply log entry的时候，
 
 ```cpp
 void CopysetNode::on_apply(::braft::Iterator &iter) {
