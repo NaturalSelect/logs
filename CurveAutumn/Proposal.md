@@ -2,7 +2,10 @@
 
 主要思路：
 1. 在apply log entry的时候，检查pause flag。
-2. 当遇到磁盘空间满时，设置pause flag。
+2. 当遇到磁盘空间满时:
+    * 设置Pause flag。
+    * 排空ApplyQueue。
+    * 将 `AppliedIndex` 设置为 `index - 1`。
 
 ```cpp
 void CopysetNode::on_apply(::braft::Iterator &iter) {
