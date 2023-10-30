@@ -1,5 +1,52 @@
 
 ```cpp
+void CopysetNode::on_apply(::braft::Iterator &iter) {
+    for (; iter.valid(); iter.next()) {
+        // 放在bthread中异步执行，避免阻塞当前状态机的执行
+        braft::AsyncClosureGuard doneGuard(iter.done());
+
+        /**
+         * 获取向braft提交任务时候传递的ChunkClosure，里面包含了
+         * Op的所有上下文 ChunkOpRequest
+         */
+        braft::Closure *closure = iter.done();
+
+        if (nullptr != closure) {
+            /**
+             * 1.closure不是null，那么说明当前节点正常，直接从内存中拿到Op
+             * context进行apply
+             */
+            ChunkClosure
+                *chunkClosure = dynamic_cast<ChunkClosure *>(iter.done());
+            CHECK(nullptr != chunkClosure)
+                << "ChunkClosure dynamic cast failed";
+            std::shared_ptr<ChunkOpRequest>& opRequest = chunkClosure->request_;
+            concurrentapply_->Push(opRequest->ChunkId(), ChunkOpRequest::Schedule(opRequest->OpType()),  // NOLINT
+                                   &ChunkOpRequest::OnApply, opRequest,
+                                   iter.index(), doneGuard.release());
+        } else {
+            // 获取log entry
+            butil::IOBuf log = iter.data();
+            /**
+             * 2.closure是null，有两种情况：
+             * 2.1. 节点重启，回放apply，这里会将Op log entry进行反序列化，
+             * 然后获取Op信息进行apply
+             * 2.2. follower apply
+             */
+            ChunkRequest request;
+            butil::IOBuf data;
+            auto opReq = ChunkOpRequest::Decode(log, &request, &data,
+                                                iter.index(), GetLeaderId());
+            auto chunkId = request.chunkid();
+            concurrentapply_->Push(chunkId, ChunkOpRequest::Schedule(request.optype()),  // NOLINT
+                                   &ChunkOpRequest::OnApplyFromLog, opReq,
+                                   dataStore_, std::move(request), data);
+        }
+    }
+}
+```
+
+```cpp
 void WriteChunkRequest::OnApply(uint64_t index,
                                 ::google::protobuf::Closure *done) {
     brpc::ClosureGuard doneGuard(done);
