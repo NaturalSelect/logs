@@ -1,13 +1,21 @@
 # Cluster Read-only
 
 主要思路：
+
+**Apply侧：**
 1. 在apply log entry的时候，查看`Pause`是否为`true`：
    * `true`  - 返回。
    * `false` - 继续执行。
 2. 当遇到磁盘空间满时:
-    * 设置Pause flag。
+    * 设置 `Pause`。
     * 排空ApplyQueue。
     * 将 `AppliedIndex` 设置为 `index - 1`。
+    * 启动定时器，轮询空闲空间直到大于阈值。
+
+**Propose侧：**
+1. Leader在收到Request时，检查`Pause`：
+  * `true` -  返回错误。
+  * `false` - 继续执行。
 
 ```cpp
 void CopysetNode::on_apply(::braft::Iterator &iter) {
