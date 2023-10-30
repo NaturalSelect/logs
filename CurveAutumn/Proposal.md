@@ -1,7 +1,8 @@
 # Cluster Read-only
 
 主要思路：
-1. 在apply log entry的时候，
+1. 在apply log entry的时候，检查pause flag。
+2. 当遇到磁盘空间满时，设置pause flag。
 
 ```cpp
 void CopysetNode::on_apply(::braft::Iterator &iter) {
