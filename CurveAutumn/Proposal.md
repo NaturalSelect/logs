@@ -14,7 +14,7 @@
 
 **Propose侧：**
 1. Leader在收到Request时，检查`Pause`：
-  * `true` -  返回错误。
+  * `true` -  返回错误，考虑`Stepdown`（说不定其他两个机器还有空间可写）。
   * `false` - 继续执行。
 
 ```cpp
