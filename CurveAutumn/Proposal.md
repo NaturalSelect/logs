@@ -17,7 +17,7 @@
 Leader在收到Request时，检查`Pause`：
 * `false` - 继续执行原来的逻辑。
 * `true`：
-  * 向Client返回错误。
+  * 向Client返回错误（`ENOSPC`）， 客户端可以考虑重试 2-3 次如果还是遇到错误，则向上层返回错误。
   * 考虑`Stepdown`（说不定其他两个机器还有空间可写）。
 
 
