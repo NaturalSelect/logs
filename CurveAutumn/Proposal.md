@@ -13,6 +13,7 @@
     * 启动定时器，轮询空闲空间直到大于阈值，设置`Pause`为`false`。
 
 **Propose侧：**
+
 Leader在收到Request时，检查`Pause`：
 * `true` -  返回错误，考虑`Stepdown`（说不定其他两个机器还有空间可写）。
 * `false` - 继续执行。
