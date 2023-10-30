@@ -1,7 +1,9 @@
 # Cluster Read-only
 
 主要思路：
-1. 在apply log entry的时候，检查pause flag。
+1. 在apply log entry的时候，查看`Pause`是否为`true`：
+   * `true`  - 返回。
+   * `false` - 继续执行。
 2. 当遇到磁盘空间满时:
     * 设置Pause flag。
     * 排空ApplyQueue。
