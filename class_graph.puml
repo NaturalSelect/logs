@@ -1,0 +1,248 @@
+@startuml
+'https://plantuml.com/class-diagram'
+
+class GlobalCorsConfig {
+    + corsFilter():CorsFilter
+}
+
+class FileDownloadController {
+    + downloadFile(fileName:String, response:HttpServletResponse):void
+}
+
+class FilesController {
+    - filesService:FilesService
+    - filepath:String
+    + getAll():List<Files>
+    + upload(uploadFile:MultipartFile):String
+    + download(subUrl:String,response:HttpServletResponse):void
+}
+
+class GroupController {
+    - groupService:GroupService
+    + getAll():List<Group>
+    + insert(group:Group):Group
+    + delete(group:Group):String
+    + update(group:Group):Group
+}
+
+class InterController {
+    - interService:InterService
+    + getAll():List<Inter>
+    + insert(inter:Inter):Inter
+    + delete(inter:Inter):String
+    + update(inter:Inter):Inter
+}
+
+class ProjectContentController {
+    - projectContentService:ProjectContentService
+    + getAll():List<ProjectContent>
+    + insert(projectContent:ProjectContent):ProjectContent
+    + delete(projectContent:ProjectContent):String
+    + update(projectContent:ProjectContent):ProjectContent
+}
+
+class ProjectController {
+    - projectService:ProjectService
+    + getAll():List<Project>
+    + inset(item:Project):Project
+    + delete(item:Project):String
+    + update(item:Project):Project
+}
+
+class ProjectFilesController {
+    - projectFilesService:ProjectFilesService
+    + getAll():List<ProjectFiles>
+    + inset(item:ProjectFiles):ProjectFiles
+    + delete(item:ProjectFiles):String
+    + update(item:ProjectFiles):ProjectFiles
+}
+
+class RoleController {
+    - roleService:RoleService
+    - roleInfoService:RoleInfoService
+    - groupService:GroupService
+    - roleGroupService:RoleGroupService
+    - metaGroupTypeDao:MetaGroupTypeDao
+    + getAll():List<Role>
+    + insert(item:Role):Role
+    + delete(item:Role):String
+    + update(item:Role):Role
+    + requestCode(hasPhone Role):String
+}
+
+class RoleGroupController {
+    - roleGroupService:RoleGroupService
+    + getAll():List<RoleGroup>
+    + insert(item:RoleGroup):RoleGroup
+    + delete(item:RoleGroup):String
+    + update(item:RoleGroup):RoleGroup
+}
+
+class RoleInfoController {
+    - roleInfoService:RoleInfoService
+    + getAll():List<RoleInfo>
+    + insert(item:RoleInfo):RoleInfo
+    + delete(item:RoleInfo):String
+    + update(item:RoleInfo):RoleInfo
+}
+
+interface JpaRepository<T,ID>
+
+interface MetaFileTypesDao
+interface MetaGroupTypeDao
+interface MetaInterTypeDao
+interface MetaPermissionsDao
+interface MetaSexDao
+interface MetaStatusDao
+
+JpaRepository <|-- MetaFileTypesDao
+JpaRepository <|-- MetaGroupTypeDao
+JpaRepository <|-- MetaInterTypeDao
+JpaRepository <|-- MetaPermissionsDao
+JpaRepository <|-- MetaSexDao
+JpaRepository <|-- MetaStatusDao
+
+interface FilesDao
+interface GroupDao
+interface InterDao
+interface ProjectContentDao
+interface ProjectDao
+interface ProjectFilesDao
+interface RoleDao
+interface RoleGroupDao
+interface RoleInfoDao
+
+JpaRepository <|-- FilesDao
+JpaRepository <|-- GroupDao
+JpaRepository <|-- InterDao
+JpaRepository <|-- ProjectContentDao
+JpaRepository <|-- ProjectDao
+JpaRepository <|-- ProjectFilesDao
+JpaRepository <|-- RoleDao
+JpaRepository <|-- RoleGroupDao
+JpaRepository <|-- RoleInfoDao
+
+class MetaFileTypes {
+    - id:Integer
+    - type:String
+}
+
+class MetaGroupType {
+    - id:Integer
+    - type:String
+}
+
+class MetaInterType {
+    - id:Integer
+    - type:String
+}
+
+class MetaPermissions {
+    - id:Integer
+    - type:String
+}
+
+class MetaSex {
+    - id:Integer
+    - type:String
+}
+
+class MetaStatus {
+    - id:Integer
+    - type:String
+}
+
+class Files {
+    - url:String
+    - name:String
+    - fileType:Integer
+    - isOrigin:Boolean
+    - path:String
+    - updateTime:Date
+}
+
+class Group {
+    - gid:Integer
+    - superGid:Integer
+    - groupName:String
+    - groupType:Integer
+    - tid:Integer
+    - interName:String
+}
+
+class Inter {
+    - tid:Integer
+    - interType:String
+    - interName:String
+    - industry:String
+    - createTime:Date
+    - updateTime:Date
+}
+
+class Project {
+    - pid:Integer
+    - gid:Integer
+}
+
+class ProjectContent {
+    - pid:Integer
+    - title:Integer
+    - content:String
+    - tid:Integer
+    - s1ddl:Date
+    - s2ddl:Date
+    - s3ddl:Date
+}
+
+class ProjectFiles {
+    - keys:UPKs.ProjectFilesUPK
+    - stage:Integer
+    - score:Integer
+}
+
+class Role {
+    - uid:Integer
+    - phone:String
+    - nickname:String
+    - token:String
+    - belong:Integer
+}
+
+class RoleGroup {
+    - keys:UPKs.RoleGroupUPK
+    - permission:Integer
+}
+
+class RoleInfo {
+    - uid:Integer
+    - avatarUrl:String
+    - sex:Integer
+    - email:String
+    - whoami:String
+    - status:Integer
+}
+
+class UPKs {
+
+}
+
+class ProjectFilesUPK {
+    - pid:Integer
+    - gid:Integer
+    - uid:Integer
+    - url:String
+}
+
+class RoleGroupUPK {
+    - uid:Integer
+    - gid:Integer
+}
+
+UPKs -- ProjectFilesUPK
+UPKs -- RoleGroupUPK
+
+class ServApplication {
+    + main(args:String[]):void
+}
+
+@enduml
